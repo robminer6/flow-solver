@@ -1,12 +1,8 @@
 import React from "react";
 import logo from "./logo.svg";
 import "./App.css";
-import FlowGame from "./flow";
 
 function App() {
-    const game = new FlowGame();
-    // const game = FlowGame;
-    console.log(game.grid);
     return (
         <div className="App">
             <header className="App-header">
