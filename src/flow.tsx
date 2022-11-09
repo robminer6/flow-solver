@@ -33,7 +33,6 @@ enum Direction{
     Right,
     Up,
     Left,
-    Undefined
 }
 
 // Converts the character representation of a space to its enum version
