@@ -1,5 +1,10 @@
 /* eslint-disable no-console */
+import { readFileSync } from "fs";
 
+const prefix = "./src/__tests__/unsolved_boards/";
+const file = "bonus_9x9_24.txt";
+const debug = true;
+const pain2maxval = 3;
 // This enum represents each possible type of space on a board
 enum FlowSpace {
     Empty = "Empty",
@@ -178,6 +183,12 @@ function compEdges(walls1: number[][], walls2: number[][]){
 export default class FlowGame {
     grid: FlowSpace[][];
 
+    pain: boolean = false;
+
+    pain2: boolean = false;
+
+    pain2val: number = 1;
+
     // Constructs our grid, usually by reading from a string array.
     constructor(arr?: string[][]) {
         if (arr) {
@@ -189,45 +200,61 @@ export default class FlowGame {
                     this.grid[i].push(stringToFlowSpace(square));
                 });
             }
-        } else {
-            // TODO: Change this. Creates a sample grid.
-            this.grid = [
-                [
-                    FlowSpace.RedCircle,
-                    FlowSpace.Empty,
-                    FlowSpace.GreenCircle,
-                    FlowSpace.Empty,
-                    FlowSpace.YellowCircle,
-                ],
-                [
-                    FlowSpace.Empty,
-                    FlowSpace.Empty,
-                    FlowSpace.BlueCircle,
-                    FlowSpace.Empty,
-                    FlowSpace.OrangeCircle,
-                ],
-                [
-                    FlowSpace.Empty,
-                    FlowSpace.Empty,
-                    FlowSpace.Empty,
-                    FlowSpace.Empty,
-                    FlowSpace.Empty,
-                ],
-                [
-                    FlowSpace.Empty,
-                    FlowSpace.GreenCircle,
-                    FlowSpace.Empty,
-                    FlowSpace.YellowCircle,
-                    FlowSpace.Empty,
-                ],
-                [
-                    FlowSpace.Empty,
-                    FlowSpace.RedCircle,
-                    FlowSpace.BlueCircle,
-                    FlowSpace.OrangeCircle,
-                    FlowSpace.Empty,
-                ],
-            ];
+        } else if (debug){
+                const contents = readFileSync(prefix + file, "utf-8");
+                const lines = contents.split(/\r?\n/);
+                const board: string[][] = [];
+                lines.forEach((line) => {
+                    board.push(line.split(""));
+                });
+                this.grid = [];
+                for (let i = 0; i < board.length; i += 1) {
+                    this.grid.push([]);
+                    board[i].forEach((square) => {
+                        this.grid[i].push(stringToFlowSpace(square));
+                    });
+                }
+
+            }
+            else {
+                // TODO: Change this. Creates a sample grid.
+                this.grid = [
+                    [
+                        FlowSpace.RedCircle,
+                        FlowSpace.Empty,
+                        FlowSpace.GreenCircle,
+                        FlowSpace.Empty,
+                        FlowSpace.YellowCircle,
+                    ],
+                    [
+                        FlowSpace.Empty,
+                        FlowSpace.Empty,
+                        FlowSpace.BlueCircle,
+                        FlowSpace.Empty,
+                        FlowSpace.OrangeCircle,
+                    ],
+                    [
+                        FlowSpace.Empty,
+                        FlowSpace.Empty,
+                        FlowSpace.Empty,
+                        FlowSpace.Empty,
+                        FlowSpace.Empty,
+                    ],
+                    [
+                        FlowSpace.Empty,
+                        FlowSpace.GreenCircle,
+                        FlowSpace.Empty,
+                        FlowSpace.YellowCircle,
+                        FlowSpace.Empty,
+                    ],
+                    [
+                        FlowSpace.Empty,
+                        FlowSpace.RedCircle,
+                        FlowSpace.BlueCircle,
+                        FlowSpace.OrangeCircle,
+                        FlowSpace.Empty,
+                    ],
+                ];
         }
     }
 
@@ -400,12 +427,71 @@ export default class FlowGame {
         return true;
     }
 
+    LEEEEROOOOOYJENKINNNNNS(path: [[number, number]], color: FlowSpace, direction: Direction){
+        const n = path.length;
+        let curRow = path[n-1][0];
+        let curCol = path[n-1][1];
+        let leftRow = curRow;
+        let leftCol = curCol;
+        let rightRow = curRow;
+        let rightCol = curCol;
+        let rowAdd = 0;
+        let colAdd = 0;
+        if (direction === Direction.Down){
+            rowAdd = 1;
+            leftCol = curCol+1;
+            rightCol = curCol-1;
+        }
+        if (direction === Direction.Right){
+            colAdd = 1;
+            leftRow = curRow-1;
+            rightRow = curRow+1;
+        }
+        if (direction === Direction.Up){
+            rowAdd = -1;
+            leftCol = curCol-1;
+            rightCol = curCol+1;
+        }
+        if (direction === Direction.Left){
+            colAdd = -1;
+            leftRow = curRow-1;
+            rightRow = curRow+1;
+        }
+        curRow+=rowAdd;
+        curCol+=colAdd;
+        leftRow+=rowAdd;
+        leftCol+=colAdd;
+        rightRow+=rowAdd;
+        rightCol+=colAdd;
+        path.push([curRow, curCol]);
+        while (this.inBounds(curRow, curCol) && this.inBounds(leftRow, leftCol) && this.inBounds(rightRow, rightCol)){
+            if (this.grid[curRow][curCol] === color){
+                return true;
+            }
+            if (this.grid[leftRow][leftCol] === color){
+                path.push([leftRow, leftCol]);
+                return true;
+            }
+            if (this.grid[rightRow][rightCol] === color){
+                path.push([rightRow, rightCol]);
+                return true;
+            }
+            curRow+=rowAdd;
+            curCol+=colAdd;
+            leftRow+=rowAdd;
+            leftCol+=colAdd;
+            rightRow+=rowAdd;
+            rightCol+=colAdd;
+        }
+        return false;
+    }
+
     // Color must be a Circle
     followEdge(path: [[number, number]], wallSide: WallSide, color: FlowSpace, given_dir: Direction): boolean{
         const n = path.length;
         const curRow = path[n-1][0];
         const curCol = path[n-1][1];
-        const direction = given_dir;
+        let direction = given_dir;
         let newRow = curRow;
         let newCol = curCol;
         let wallRow = curRow;
@@ -438,12 +524,24 @@ export default class FlowGame {
         }
         // Check if space ahead valid
         if (!this.isWall(newRow, newCol)){
+            // We can move there, lets do it
+            path.push([newRow, newCol]);
+
             if (isCircle(this.grid[newRow][newCol]) !== FlowSpace.Empty && isCircle(this.grid[newRow][newCol]) !== isCircle(color)){
-                return false; // Found an uncompleted circle ahead of us, no go.
+                if (!this.pain) {
+                    return false; // Found an uncompleted circle ahead of us, no go.
+                }
+                // Turn away from the wall and LEEEEERROOOOOOOY JENKINNNNNNNNS ourselves until we either win or hit another problem
+                if (wallSide === WallSide.Right){
+                    direction = (direction+3)%4;
+                }
+                else{
+                    direction = (direction+1)%4;
+                }
+                return this.LEEEEROOOOOYJENKINNNNNS(path, color, direction);
             }
 
             // Can move there, so we're going to
-            path.push([newRow, newCol]);
             if (this.grid[path[path.length-1][0]][path[path.length-1][1]] === color){
                 // we win
                 return true;
@@ -567,6 +665,7 @@ export default class FlowGame {
     // Attempts to solve the grid by calling "solveCircle" on every circle it comes across.
     loop() {
         let again = true;
+
         while (again) {
             again = false;
             for (let i = 0; i < this.grid.length; i += 1) {
@@ -577,6 +676,10 @@ export default class FlowGame {
                         if (walls.length !== 0) {
                             if (this.solveCircle2(i, j, k, walls)){
                                 again = true;
+                                if (this.pain){
+                                    this.pain = false;
+                                    return;
+                                }
                             }
                         }
                     }
@@ -590,6 +693,25 @@ export default class FlowGame {
         this.printGrid();
         console.log("Solving!");
         this.loop();
+        const savedGrid = this.grid;
+        if (!this.checkComplete()){
+            while(!this.pain) {
+                this.pain = true;
+                this.loop();
+            }
+        }
+
+        if (!this.checkComplete()){
+            this.grid = savedGrid;
+            this.pain = false;
+            while(this.pain2val < pain2maxval && !this.pain2){
+                this.pain2 = true;
+                this.loop();
+                if (this.pain2){
+                    this.pain2val+=1;
+                }
+            }
+        }
         this.checkComplete();
     }
 }
