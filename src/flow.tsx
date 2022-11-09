@@ -1,3 +1,5 @@
+/* eslint-disable no-console */
+
 // This enum represents each possible type of space on a board
 enum FlowSpace {
     Empty = "Empty",
@@ -19,6 +21,19 @@ enum FlowSpace {
     Lime = "Lime",
     Magenta = "Magenta",
     Purple = "Purple",
+}
+
+enum WallSide{
+    Left = -1,
+    Right = 1
+}
+
+enum Direction{
+    Down,
+    Right,
+    Up,
+    Left,
+    Undefined
 }
 
 // Converts the character representation of a space to its enum version
@@ -119,8 +134,8 @@ function isCircle(entry: FlowSpace): FlowSpace {
 /* Takes in the grid as input, along with a position and the corresponding line color.
 The input position MUST be a Circle FlowSpace.
 Function returns whether the circle has any adjacent connected line segments. Because line segments
-are only placed in the grid when we have a complete path, this function returns whether or not a circle
-has a solution found for it already. */
+are only placed in the grid when we have a path we're trying, this function returns whether or not a circle
+has a way to get out */
 function circleConnect(
     grid: FlowSpace[][],
     i: number,
@@ -150,115 +165,12 @@ function circleConnect(
     return false;
 }
 
-/* This function is a mess, I'm sorry.
-This function takes the grid as input along with any position within the grid.
-The function returns whether or not the position given is "on the edge."
-"On the edge" is defined as touching the edge of the grid, or a completed line or circle. */
-function isEdge(grid: FlowSpace[][], row: number, col: number) {
-    // Check if we're physically on the literal edge of the grid.
-    if (
-        row === 0 ||
-        col === 0 ||
-        row === grid.length - 1 ||
-        col === grid[0].length - 1
-    ) {
-        return true;
-    }
-    if (grid[row - 1][col] !== FlowSpace.Empty) {
-        // Space above isn't empty, let's see if it counts as an edge piece
-        const upSpace: FlowSpace = isCircle(grid[row - 1][col]);
-        if (upSpace !== FlowSpace.Empty) {
-            // If we enter this if statement, the space above us is a circle
-            const completedCirc = circleConnect(grid, row - 1, col, upSpace);
-            if (completedCirc) {
-                // If it's complete, this counts as an edge.
+function compEdges(walls1: number[][], walls2: number[][]){
+    for (let i = 0; i < walls1.length; i+=1){
+        for (let j = 0; j < walls2.length; j+=1){
+            if (walls1[i][0] === walls2[j][0] && walls1[i][1] === walls2[j][1]){
                 return true;
             }
-            // If not, we still might be edge elsewhere, so don't return false yet.
-        } else {
-            // Space above us is a completed line, return true.
-            return true;
-        }
-    }
-    // Repeat for space below
-    if (grid[row + 1][col] !== FlowSpace.Empty) {
-        const downSpace: FlowSpace = isCircle(grid[row + 1][col]);
-        if (downSpace !== FlowSpace.Empty) {
-            const completedCirc = circleConnect(grid, row + 1, col, downSpace);
-            if (completedCirc) {
-                return completedCirc;
-            }
-        } else {
-            return true;
-        }
-    }
-    // Repeat for space left
-    if (grid[row][col - 1] !== FlowSpace.Empty) {
-        const leftSpace: FlowSpace = isCircle(grid[row][col - 1]);
-        if (leftSpace !== FlowSpace.Empty) {
-            const completedCirc = circleConnect(grid, row, col - 1, leftSpace);
-            if (completedCirc) {
-                return completedCirc;
-            }
-        } else {
-            return true;
-        }
-    }
-    // Repeat for space right
-    if (grid[row][col + 1] !== FlowSpace.Empty) {
-        const rightSpace: FlowSpace = isCircle(grid[row][col + 1]);
-        if (rightSpace !== FlowSpace.Empty) {
-            const completedCirc = circleConnect(grid, row, col + 1, rightSpace);
-            if (completedCirc) {
-                return completedCirc;
-            }
-        } else {
-            return true;
-        }
-    }
-    if (grid[row - 1][col - 1] !== FlowSpace.Empty) {
-        // If above left corner is either a line piece or a completed circle, return true.
-        const upLeftSpace: FlowSpace = isCircle(grid[row - 1][col - 1]);
-        if (upLeftSpace !== FlowSpace.Empty) {
-            if (circleConnect(grid, row - 1, col - 1, upLeftSpace)) {
-                return true;
-            }
-        } else {
-            // Space above left is a completed line
-            return true;
-        }
-    }
-    if (grid[row + 1][col - 1] !== FlowSpace.Empty) {
-        // Below left corner
-        const downLeftSpace: FlowSpace = isCircle(grid[row + 1][col - 1]);
-        if (downLeftSpace !== FlowSpace.Empty) {
-            if (circleConnect(grid, row + 1, col - 1, downLeftSpace)) {
-                return true;
-            }
-        } else {
-            return true;
-        }
-    }
-    if (grid[row - 1][col + 1] !== FlowSpace.Empty) {
-        // Above right corner
-        const upRightSpace: FlowSpace = isCircle(grid[row - 1][col + 1]);
-        if (upRightSpace !== FlowSpace.Empty) {
-            if (circleConnect(grid, row - 1, col + 1, upRightSpace)) {
-                return true;
-            }
-        } else {
-            return true;
-        }
-    }
-    if (grid[row + 1][col + 1] !== FlowSpace.Empty) {
-        // Below right corner
-        const downRightSpace: FlowSpace = isCircle(grid[row + 1][col + 1]);
-        if (downRightSpace !== FlowSpace.Empty) {
-            if (circleConnect(grid, row + 1, col + 1, downRightSpace)) {
-                return true;
-            }
-        } else {
-            return true;
         }
     }
     return false;
@@ -318,6 +230,25 @@ export default class FlowGame {
                 ],
             ];
         }
+    }
+
+    inBounds(row: number, col: number){
+        return !(row < 0 || col < 0 || row >= this.grid.length || col >= this.grid[0].length);
+    }
+
+    // Circles are only walls if they are FULLY complete
+    isWall(row:number, col: number){
+        if (!this.inBounds(row, col)){
+            return true;
+        }
+        const k = isCircle(this.grid[row][col]);
+        if (k !== FlowSpace.Empty){
+            if (this.checkCirclePath(row, col, k)){
+                return true;
+            }// Problem for section by section brute force
+            return false;
+        }
+        return this.grid[row][col] !== FlowSpace.Empty;
     }
 
     // Returns whether the given circle is fully connected to its pair.
@@ -433,104 +364,6 @@ export default class FlowGame {
         }
     }
 
-    /* Attempts to recursively calculate a solution to a circle.
-    When the function is originally called, potentialPath will have the starting circle location as its only element
-    and i and j will be an edge space adjacent to it.
-    This function will return whether or not it has found a valid path to the other circle, and will modify
-    potentialPath along the way. */
-    solveCircleRecurse(
-        row: number,
-        col: number,
-        potentialPath: [[number, number]],
-        solelyEdge: boolean,
-        circle: FlowSpace
-    ): boolean {
-        const lastspace: [number, number] =
-            potentialPath[potentialPath.length - 1];
-        if (row === potentialPath[0][0] && col === potentialPath[0][1]) {
-            // console.log('full circle');
-            return false; // Come full circle.
-        }
-        if (this.grid[row][col] === circle) {
-            // If our current position is at the other circle, we win!
-            // console.log("Good")
-            potentialPath.push([row, col]);
-            return true;
-        }
-        if (row !== 0 && lastspace[0] !== row - 1) {
-            // Check space above and don't go there if we just came from there.
-            if (
-                isEdge(this.grid, row - 1, col) &&
-                (this.grid[row - 1][col] === FlowSpace.Empty ||
-                    this.grid[row - 1][col] === circle)
-            ) {
-                // If the space above us is on the edge and the space is either Empty or our finishing Circle, go there.
-                // Add current space to potentialPath and call self again.
-                potentialPath.push([row, col]);
-                return this.solveCircleRecurse(
-                    row - 1,
-                    col,
-                    potentialPath,
-                    solelyEdge,
-                    circle
-                );
-            }
-        }
-        if (row !== this.grid.length - 1 && lastspace[0] !== row + 1) {
-            // Check space below.
-            if (
-                isEdge(this.grid, row + 1, col) &&
-                (this.grid[row + 1][col] === FlowSpace.Empty ||
-                    this.grid[row + 1][col] === circle)
-            ) {
-                potentialPath.push([row, col]);
-                return this.solveCircleRecurse(
-                    row + 1,
-                    col,
-                    potentialPath,
-                    solelyEdge,
-                    circle
-                );
-            }
-        }
-        if (col !== 0 && lastspace[1] !== col - 1) {
-            // Check space left.
-            if (
-                isEdge(this.grid, row, col - 1) &&
-                (this.grid[row][col - 1] === FlowSpace.Empty ||
-                    this.grid[row][col - 1] === circle)
-            ) {
-                potentialPath.push([row, col]);
-                return this.solveCircleRecurse(
-                    row,
-                    col - 1,
-                    potentialPath,
-                    solelyEdge,
-                    circle
-                );
-            }
-        }
-        if (col !== this.grid[0].length - 1 && lastspace[1] !== col + 1) {
-            // Check space right.
-            if (
-                isEdge(this.grid, row, col + 1) &&
-                (this.grid[row][col + 1] === FlowSpace.Empty ||
-                    this.grid[row][col + 1] === circle)
-            ) {
-                potentialPath.push([row, col]);
-                return this.solveCircleRecurse(
-                    row,
-                    col + 1,
-                    potentialPath,
-                    solelyEdge,
-                    circle
-                );
-            }
-        }
-        // console.log(`nowhere to go ${i} ${j}`);
-        return false; // Couldn't find another space to go to.
-    }
-
     // Takes in an acceptedPath and the line segment to change it to and changes the grid
     // to fill in the spaces with the correct line segments.
     mutateGrid(acceptedPath: [[number, number]], line: FlowSpace) {
@@ -539,166 +372,214 @@ export default class FlowGame {
         }
     }
 
-    // This function sets up the solveCircleRecurse function by finding how many paths there are to follow
-    solveCircle(
-        row: number,
-        col: number,
-        solelyEdge: boolean,
-        line: FlowSpace
-    ) {
-        // console.log(`Attempting to solve circle at ${i} ${j} its a ${this.grid[i][j]}`)
+    checkFreedom(row: number, col: number, color?: FlowSpace){
+        if (!this.inBounds(row, col)){
+            return true; // This shouldn't be called much honestly, but its possible.
+        }
+        if (color && this.grid[row][col] === color){
+            return true; // This will likely get called on either paths that will fail eventually, or where we run into a corner with the ending circle next to us
+        }
+        if (isCircle(this.grid[row][col]) !== FlowSpace.Empty){
+            if (circleConnect(this.grid, row, col, isCircle(this.grid[row][col]))){
+                return true;
+            }
+            let free = 0;
+            if (!this.isWall(row-1, col)){
+                free+=1;
+            }
+            if (!this.isWall( row+1, col)){
+                free+=1;
+            }
+            if (!this.isWall(row, col-1)){
+                free+=1;
+            }
+            if (!this.isWall( row, col+1)){
+                free+=1;
+            }
+            return free > 1;
+        }
+        return true;
+    }
+
+    // Color must be a Circle
+    followEdge(path: [[number, number]], wallSide: WallSide, color: FlowSpace, given_dir: Direction): boolean{
+        const n = path.length;
+        const curRow = path[n-1][0];
+        const curCol = path[n-1][1];
+        const direction = given_dir;
+        let newRow = curRow;
+        let newCol = curCol;
+        let wallRow = curRow;
+        let wallCol = curCol;
+        let checkRow = curRow;
+        let checkCol = curCol;
+        if (direction === Direction.Down){
+            newRow += 1;
+            wallRow = newRow;
+            wallCol = newCol - wallSide;
+            checkCol = newCol + wallSide;
+        }
+        if (direction === Direction.Left){
+            newCol -= 1;
+            wallCol = newCol;
+            wallRow = newRow - wallSide;
+            checkRow = newRow + wallSide
+        }
+        if (direction === Direction.Up){
+            newRow -= 1;
+            wallRow = newRow;
+            wallCol = newCol + wallSide;
+            checkCol = newCol - wallSide;
+        }
+        if (direction === Direction.Right){
+            newCol+=1;
+            wallCol = newCol;
+            wallRow = newRow + wallSide;
+            checkRow = newRow - wallSide;
+        }
+        // Check if space ahead valid
+        if (!this.isWall(newRow, newCol)){
+            if (isCircle(this.grid[newRow][newCol]) !== FlowSpace.Empty && isCircle(this.grid[newRow][newCol]) !== isCircle(color)){
+                return false; // Found an uncompleted circle ahead of us, no go.
+            }
+
+            // Can move there, so we're going to
+            path.push([newRow, newCol]);
+            if (this.grid[path[path.length-1][0]][path[path.length-1][1]] === color){
+                // we win
+                return true;
+            }
+
+            // Maybe we weren't allowed to do this.
+            if (!this.checkFreedom(checkRow, checkCol, color)){
+                return false; // Found a circle on the space opposite of wallSide that had nowhere to go.
+            }
+
+            // See if we still have wall on the correct side
+            if (!this.isWall(wallRow, wallCol)){
+                // Ack, wall has disappeared out from under us. It must have gone to the wallSide
+                /*
+                path.push([wallRow, wallCol]);
+                if (this.grid[path[path.length-1][0]][path[path.length-1][1]] === color){
+                    // we win
+                    return true;
+                }
+                */
+                if (wallSide === WallSide.Left){
+                    return this.followEdge(path, wallSide, color, (direction+1)%4);
+                }
+                return this.followEdge(path, wallSide, color, (direction+3)%4);
+            }
+            return this.followEdge(path, wallSide, color, direction); // Keep moving
+        }
+
+        // Space ahead is not enterable, try space opposite wallSide
+        if (wallSide === WallSide.Right){
+            return this.followEdge(path, wallSide, color, (direction+1)%4);
+        }
+        return this.followEdge(path, wallSide, color, (direction+3)%4);
+    }
+
+    solveCircle2(row: number, col: number, line: FlowSpace, walls: number[][]){
         let paths = 0;
-        const potentialPathA: [[number, number]] = [[row, col]];
-        const potentialPathB: [[number, number]] = [[row, col]];
-        let asuccess: boolean = false;
-        let bsuccess: boolean = false;
-        if (row !== 0) {
-            if (
-                isEdge(this.grid, row - 1, col) &&
-                this.grid[row - 1][col] === FlowSpace.Empty
-            ) {
-                // Can only have 1 path at this point
-                // console.log("attempting to move up as a starting edge");
-                paths += 1;
-                asuccess = this.solveCircleRecurse(
-                    row - 1,
-                    col,
-                    potentialPathA,
-                    solelyEdge,
-                    this.grid[row][col]
-                );
-            }
-        }
-        if (row !== this.grid.length - 1) {
-            if (
-                isEdge(this.grid, row + 1, col) &&
-                this.grid[row + 1][col] === FlowSpace.Empty
-            ) {
-                // console.log("Attempting to move down from it.")
-                paths += 1;
-                if (paths === 1) {
-                    // If this is the first path we're trying, assign this to A
-                    asuccess = this.solveCircleRecurse(
-                        row + 1,
-                        col,
-                        potentialPathA,
-                        solelyEdge,
-                        this.grid[row][col]
-                    );
-                } else {
-                    // Else assign to B
-                    bsuccess = this.solveCircleRecurse(
-                        row + 1,
-                        col,
-                        potentialPathB,
-                        solelyEdge,
-                        this.grid[row][col]
-                    );
+        const potentialPaths: [[[number, number]]] = [[[row, col]]];
+        const successes: [boolean] = [false];
+        // DOWN RIGHT UP LEFT
+        const rightWalls = [[[row, col-1], [row+1, col-1]], [[row+1, col], [row+1, col+1]], [[row, col+1], [row-1, col+1]], [[row-1, col], [row-1, col-1]]];
+        const leftWalls = [[[row, col+1], [row+1, col+1]], [[row-1, col], [row-1, col+1]], [[row, col-1], [row-1, col-1]], [[row+1, col], [row+1, col-1]]];
+        const direction = [[row+1, col], [row, col+1], [row-1, col], [row, col-1]];
+
+        for (let i = 0; i < 4; i+=1) {
+            const tryrow = direction[i][0];
+            const trycol = direction[i][1];
+            if (!this.isWall(tryrow, trycol)) {
+                // Make sure that this space is "on the edge", and that at least one of its walls is one of our walls
+                const newWalls = this.isEdge2(tryrow, trycol);
+                if (compEdges(walls, newWalls)) {
+                    // Check if its a space we can actually go to.
+                    const k = isCircle(this.grid[tryrow][trycol]);
+                    if (k === FlowSpace.Empty || k === line) {
+                        // Can go
+
+                        // Are any of the walls on our right?
+                        if (this.isWall(rightWalls[i][0][0], rightWalls[i][0][1]) || this.isWall(rightWalls[i][1][0], rightWalls[i][1][1])){
+                            paths += 1;
+                            // We go with wall on right
+                            const potPath: [[number, number]] = [[row, col]];
+                            const potSuc = this.followEdge(potPath, WallSide.Right, this.grid[row][col], i);
+                            potentialPaths.push(potPath);
+                            successes.push(potSuc);
+                        }
+                        // Any walls on left?
+                        if (this.isWall(leftWalls[i][0][0], leftWalls[i][0][1]) || this.isWall(leftWalls[i][1][0], leftWalls[i][1][1])){
+                            paths += 1
+                            // We go with wall on left
+                            const potPath: [[number, number]] = [[row, col]];
+                            const potSuc = this.followEdge(potPath, WallSide.Left, this.grid[row][col], i);
+                            potentialPaths.push(potPath);
+                            successes.push(potSuc);
+                        }
+                    }
+                    // No can go
                 }
             }
         }
-        if (col !== 0) {
-            if (
-                isEdge(this.grid, row, col - 1) &&
-                this.grid[row][col - 1] === FlowSpace.Empty
-            ) {
-                // console.log("attempt move left")
-                paths += 1;
-                if (paths === 1) {
-                    asuccess = this.solveCircleRecurse(
-                        row,
-                        col - 1,
-                        potentialPathA,
-                        solelyEdge,
-                        this.grid[row][col]
-                    );
-                } else {
-                    bsuccess = this.solveCircleRecurse(
-                        row,
-                        col - 1,
-                        potentialPathB,
-                        solelyEdge,
-                        this.grid[row][col]
-                    );
+        if (paths === 0){
+            return false;
+        }
+        if (paths > 2){
+            console.log("huh");
+        }
+        let shortestpath = -1;
+        let shortestindex = -1;
+        // All paths generated, lets check em out.
+        for (let i = 1; i < successes.length; i+=1) {
+            const potPathRowEnd = potentialPaths[i][potentialPaths[i].length-1][0];
+            const potPathColEnd = potentialPaths[i][potentialPaths[i].length-1][1];
+            if (successes[i] && isCircle(this.grid[potPathRowEnd][potPathColEnd]) === line && !(potPathRowEnd === row && potPathColEnd === col)){
+                // We did it reddit!
+                if (potentialPaths[i].length-1 < shortestpath || shortestpath === -1){
+                    shortestpath = potentialPaths[i].length-1;
+                    shortestindex = i;
                 }
             }
         }
-        if (col !== this.grid[0].length - 1) {
-            if (
-                isEdge(this.grid, row, col + 1) &&
-                this.grid[row][col + 1] === FlowSpace.Empty
-            ) {
-                // console.log('attempt move right');
-                paths += 1;
-                if (paths === 1) {
-                    asuccess = this.solveCircleRecurse(
-                        row,
-                        col + 1,
-                        potentialPathA,
-                        solelyEdge,
-                        this.grid[row][col]
-                    );
-                } else {
-                    bsuccess = this.solveCircleRecurse(
-                        row,
-                        col + 1,
-                        potentialPathB,
-                        solelyEdge,
-                        this.grid[row][col]
-                    );
+        if (shortestindex === -1){
+            return false;
+        }
+        this.mutateGrid(potentialPaths[shortestindex], line);
+        console.log(`Was able to solve circle at ${row}, ${col}`);
+        return true;
+
+    }
+
+    isEdge2(row: number, col: number){
+        const walls = [];
+        for (let i = row-1; i < row+2; i+=1){
+            for (let j = col-1; j < col+2; j+=1){
+                if (this.isWall(i, j)){
+                    walls.push([i,j])
                 }
             }
         }
-        if (paths === 1) {
-            // Well we better hope potential path A did us good.
-            if (!asuccess) {
-                // fuck.
-                // this.printGrid();
-                // console.log("Fuck");
-                return;
-            }
-            // A succeeded, mutate the grid for this solution.
-            this.mutateGrid(potentialPathA, line);
-        }
-        if (paths === 2) {
-            if (!asuccess) {
-                if (!bsuccess) {
-                    // console.log("Fuck me.");
-                    // this.printGrid();
-                } else {
-                    // Just b succeeded, so mutate grid.
-                    this.mutateGrid(potentialPathB, line);
-                }
-            } else if (!bsuccess) {
-                // Just A succeeded, mutate grid
-                this.mutateGrid(potentialPathA, line);
-            } else {
-                if (potentialPathA.length === potentialPathB.length) {
-                    console.log("Come on man, this is so sad.");
-                    // A and B have equal lengths. Oh no.
-                    return;
-                }
-                if (potentialPathA.length < potentialPathB.length) {
-                    this.mutateGrid(potentialPathA, line); // A was better.
-                } else {
-                    this.mutateGrid(potentialPathB, line); // B was better.
-                }
-            }
-        }
+        return walls;
     }
 
     // Attempts to solve the grid by calling "solveCircle" on every circle it comes across.
-    loop(solelyEdge: boolean) {
-        for (let i = 0; i < this.grid.length; i += 1) {
-            for (let j = 0; j < this.grid[0].length; j += 1) {
-                if (isEdge(this.grid, i, j) || !solelyEdge) {
-                    const k: FlowSpace = isCircle(this.grid[i][j]);
-                    if (
-                        k !== FlowSpace.Empty &&
-                        !this.checkCirclePath(i, j, k)
-                    ) {
-                        // Need to solve circle
-                        this.solveCircle(i, j, solelyEdge, k);
+    loop() {
+        let again = true;
+        while (again) {
+            again = false;
+            for (let i = 0; i < this.grid.length; i += 1) {
+                for (let j = 0; j < this.grid[0].length; j += 1) {
+                    const k = isCircle(this.grid[i][j]);
+                    if (k !== FlowSpace.Empty) {
+                        const walls = this.isEdge2(i, j);
+                        if (walls.length !== 0) {
+                            if (this.solveCircle2(i, j, k, walls)){
+                                again = true;
+                            }
+                        }
                     }
                 }
             }
@@ -709,7 +590,7 @@ export default class FlowGame {
     solve() {
         this.printGrid();
         console.log("Solving!");
-        this.loop(true);
+        this.loop();
         this.checkComplete();
     }
 }

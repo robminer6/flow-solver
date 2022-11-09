@@ -33,11 +33,6 @@
         ],
         "parserOptions": {
             "project": "./tsconfig.json"
-        },
-        "module.exports": {
-            "rules": {
-                "no-console": "off"
-            }
         }
     },
     "browserslist": {
