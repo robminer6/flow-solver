@@ -13,6 +13,7 @@ root.render(
         <App />
     </React.StrictMode>
 );
+
 const game = new FlowGame();
 game.solve();
 // game.checkComplete();

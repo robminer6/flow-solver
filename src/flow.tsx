@@ -1,10 +1,7 @@
 /* eslint-disable no-console */
-import { readFileSync } from "fs";
-
-const prefix = "./src/__tests__/unsolved_boards/";
-const file = "bonus_9x9_24.txt";
+// const pain2maxval = 3;
+const leroymaxval = 3;
 const debug = true;
-const pain2maxval = 3;
 // This enum represents each possible type of space on a board
 enum FlowSpace {
     Empty = "Empty",
@@ -189,6 +186,8 @@ export default class FlowGame {
 
     pain2val: number = 1;
 
+    pain2attempts : [number, number, FlowSpace] = [-1, -1, FlowSpace.Empty];
+
     // Constructs our grid, usually by reading from a string array.
     constructor(arr?: string[][]) {
         if (arr) {
@@ -201,21 +200,28 @@ export default class FlowGame {
                 });
             }
         } else if (debug){
-                const contents = readFileSync(prefix + file, "utf-8");
-                const lines = contents.split(/\r?\n/);
-                const board: string[][] = [];
-                lines.forEach((line) => {
-                    board.push(line.split(""));
+            const file = ".C...B.RY\n" +
+                ".M.G..R..\n" +
+                "........C\n" +
+                "..YM...G.\n" +
+                "...B.....\n" +
+                ".........\n" +
+                ".........\n" +
+                ".O.....O.\n" +
+                ".........";
+            const lines = file.split(/\r?\n/);
+            const board : string[][] = [];
+            lines.forEach((line) => {
+                board.push(line.split(""));
+            });
+            this.grid = [];
+            for (let i = 0; i < board.length; i += 1) {
+                this.grid.push([]);
+                board[i].forEach((square) => {
+                    this.grid[i].push(stringToFlowSpace(square));
                 });
-                this.grid = [];
-                for (let i = 0; i < board.length; i += 1) {
-                    this.grid.push([]);
-                    board[i].forEach((square) => {
-                        this.grid[i].push(stringToFlowSpace(square));
-                    });
-                }
-
             }
+        }
             else {
                 // TODO: Change this. Creates a sample grid.
                 this.grid = [
@@ -269,9 +275,12 @@ export default class FlowGame {
         }
         const k = isCircle(this.grid[row][col]);
         if (k !== FlowSpace.Empty){
-            if (this.checkCirclePath(row, col, k)){
+            if (circleConnect(this.grid, row, col, k)){
                 return true;
-            }// Problem for section by section brute force
+            }
+            /* if (this.checkCirclePath(row, col, k)){
+                return true;
+            }// Problem for section by section brute force */
             return false;
         }
         return this.grid[row][col] !== FlowSpace.Empty;
@@ -429,6 +438,7 @@ export default class FlowGame {
 
     LEEEEROOOOOYJENKINNNNNS(path: [[number, number]], color: FlowSpace, direction: Direction){
         const n = path.length;
+        let i = 0;
         let curRow = path[n-1][0];
         let curCol = path[n-1][1];
         let leftRow = curRow;
@@ -463,10 +473,13 @@ export default class FlowGame {
         leftCol+=colAdd;
         rightRow+=rowAdd;
         rightCol+=colAdd;
-        path.push([curRow, curCol]);
-        while (this.inBounds(curRow, curCol) && this.inBounds(leftRow, leftCol) && this.inBounds(rightRow, rightCol)){
+        while (this.inBounds(curRow, curCol) && this.inBounds(leftRow, leftCol) && this.inBounds(rightRow, rightCol) && i < leroymaxval){
+            path.push([curRow, curCol]);
             if (this.grid[curRow][curCol] === color){
                 return true;
+            }
+            if (this.isWall(curRow, curCol) || isCircle(this.grid[curRow][curCol]) !== FlowSpace.Empty){
+                return false;
             }
             if (this.grid[leftRow][leftCol] === color){
                 path.push([leftRow, leftCol]);
@@ -482,6 +495,51 @@ export default class FlowGame {
             leftCol+=colAdd;
             rightRow+=rowAdd;
             rightCol+=colAdd;
+            i+=1;
+        }
+        return false;
+    }
+
+    // Function only modifies path if it returns true. Function returns true if it found the endpoint
+    edgeDash(path: [[number, number]], color: FlowSpace, direction: Direction){
+        const n = path.length;
+        let curRow = path[n-1][0];
+        let curCol = path[n-1][1];
+        const path2 : [[number, number]] = [[curRow, curCol]];
+        let rowAdd = 0;
+        let colAdd = 0;
+        if (direction === Direction.Down){
+            rowAdd = 1;
+        }
+        if (direction === Direction.Right){
+            colAdd = 1;
+        }
+        if (direction === Direction.Up){
+            rowAdd = -1;
+        }
+        if (direction === Direction.Left){
+            colAdd = -1;
+        }
+        let success = true;
+        for (let i = 0; i < this.pain2val; i+=1) {
+            curRow+=rowAdd;
+            curCol+=colAdd;
+            if (this.isWall(curRow, curCol)){
+                return false;
+            }
+            if (this.grid[curRow][curCol] !== FlowSpace.Empty){
+                if (this.grid[curRow][curCol] === color){
+                    success = true;
+                    break;
+                }
+                return false;
+            }
+        }
+        if (success){
+            for (let i = 1; i < path2.length; i+=1){
+                path.push(path2[i]);
+            }
+            return true;
         }
         return false;
     }
@@ -491,7 +549,7 @@ export default class FlowGame {
         const n = path.length;
         const curRow = path[n-1][0];
         const curCol = path[n-1][1];
-        let direction = given_dir;
+        const direction = given_dir;
         let newRow = curRow;
         let newCol = curCol;
         let wallRow = curRow;
@@ -524,22 +582,23 @@ export default class FlowGame {
         }
         // Check if space ahead valid
         if (!this.isWall(newRow, newCol)){
-            // We can move there, lets do it
-            path.push([newRow, newCol]);
 
             if (isCircle(this.grid[newRow][newCol]) !== FlowSpace.Empty && isCircle(this.grid[newRow][newCol]) !== isCircle(color)){
                 if (!this.pain) {
                     return false; // Found an uncompleted circle ahead of us, no go.
                 }
                 // Turn away from the wall and LEEEEERROOOOOOOY JENKINNNNNNNNS ourselves until we either win or hit another problem
-                if (wallSide === WallSide.Right){
-                    direction = (direction+3)%4;
+                let tmpDirection;
+                if (wallSide === WallSide.Right) {
+                    tmpDirection = (direction + 1) % 4;
+                } else {
+                    tmpDirection = (direction + 3) % 4;
                 }
-                else{
-                    direction = (direction+1)%4;
-                }
-                return this.LEEEEROOOOOYJENKINNNNNS(path, color, direction);
+                return this.LEEEEROOOOOYJENKINNNNNS(path, color, tmpDirection);
             }
+
+            // We can move there, lets do it
+            path.push([newRow, newCol]);
 
             // Can move there, so we're going to
             if (this.grid[path[path.length-1][0]][path[path.length-1][1]] === color){
@@ -552,16 +611,23 @@ export default class FlowGame {
                 return false; // Found a circle on the space opposite of wallSide that had nowhere to go.
             }
 
+            if (this.pain2){
+                // Look away from the wall for pain2val spaces to see if we can find our goal, if we can, try it.
+                let tmpDirection;
+                if (wallSide === WallSide.Right) {
+                    tmpDirection = (direction + 1) % 4;
+                } else {
+                    tmpDirection = (direction + 3) % 4;
+                }
+                if(this.edgeDash(path, color, tmpDirection)){
+                    return true;
+                }
+            }
+
             // See if we still have wall on the correct side
             if (!this.isWall(wallRow, wallCol)){
                 // Ack, wall has disappeared out from under us. It must have gone to the wallSide
-                /*
-                path.push([wallRow, wallCol]);
-                if (this.grid[path[path.length-1][0]][path[path.length-1][1]] === color){
-                    // we win
-                    return true;
-                }
-                */
+
                 if (wallSide === WallSide.Left){
                     return this.followEdge(path, wallSide, color, (direction+1)%4);
                 }
@@ -645,7 +711,7 @@ export default class FlowGame {
             return false;
         }
         this.mutateGrid(potentialPaths[shortestindex], line);
-        console.log(`Was able to solve circle at ${row}, ${col}`);
+        // console.log(`Was able to solve circle at ${row}, ${col}`);
         return true;
 
     }
@@ -671,13 +737,17 @@ export default class FlowGame {
             for (let i = 0; i < this.grid.length; i += 1) {
                 for (let j = 0; j < this.grid[0].length; j += 1) {
                     const k = isCircle(this.grid[i][j]);
-                    if (k !== FlowSpace.Empty) {
+                    if (k !== FlowSpace.Empty && !this.checkCirclePath(i, j, k)) {
                         const walls = this.isEdge2(i, j);
                         if (walls.length !== 0) {
                             if (this.solveCircle2(i, j, k, walls)){
                                 again = true;
                                 if (this.pain){
                                     this.pain = false;
+                                    return;
+                                }
+                                if (this.pain2){
+                                    this.pain2 = false;
                                     return;
                                 }
                             }
@@ -693,25 +763,30 @@ export default class FlowGame {
         this.printGrid();
         console.log("Solving!");
         this.loop();
-        const savedGrid = this.grid;
+        // const savedGrid = this.grid;
         if (!this.checkComplete()){
+            console.log("Pain 1 board below: ")
+            this.printGrid();
             while(!this.pain) {
                 this.pain = true;
                 this.loop();
             }
         }
-
+        /*
         if (!this.checkComplete()){
+            console.log("Trying pain 2.");
             this.grid = savedGrid;
             this.pain = false;
             while(this.pain2val < pain2maxval && !this.pain2){
                 this.pain2 = true;
                 this.loop();
-                if (this.pain2){
+                if (this.pain2 && this.pain2val < pain2maxval){
                     this.pain2val+=1;
                 }
             }
         }
+        */
+
         this.checkComplete();
     }
 }
