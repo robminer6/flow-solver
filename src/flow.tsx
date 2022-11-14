@@ -2,7 +2,7 @@
 /* eslint-disable no-console */
 // const pain2maxval = 3;
 const leroymaxval = 3;
-const debug = false;
+const debug = true;
 
 class Tile {
     color: string;
@@ -138,6 +138,105 @@ export default class FlowGame {
         }
     }
 
+    // Investigates a head to see if it touches its partner. Connects them if so.
+    // Returns whether a pair was connected.
+    connectPair(row: number, col: number): boolean {
+        const investigate = (newRow: number, newCol: number) => {
+            if (this.inBounds(newRow, newCol)) {
+                if (
+                    this.grid[newRow][newCol].head &&
+                    this.grid[newRow][newCol].color === this.grid[row][col].color
+                ) {
+                    // We connected two circles!
+                    delete this.headLocations[this.grid[row][col].color];
+                    this.grid[row][col].head = false;
+                    this.grid[newRow][newCol].head = false;
+                    return true;
+                }
+            }
+            return false;
+        };
+        if (
+            investigate(row - 1, col) ||
+            investigate(row, col + 1) ||
+            investigate(row + 1, col) ||
+            investigate(row, col - 1)
+        ) {
+            return true;
+        }
+        return false;
+    }
+
+    // Determines whether a given move is possible.
+    possibleMove(headRow: number, headCol: number, newRow: number, newCol: number): boolean {
+        /* Reasons why a move might be impossible:
+        1. It's trying to go to a non-empty tile. (done)
+        2. It would create a 2x2 of the same color.
+        3. It would cause another dot to have no possible moves.
+        TODO: Implement all of these checks.
+        */
+        if (this.grid[newRow][newCol].color !== "empty") {
+            return false;
+        }
+        return true; // placeholder
+    }
+
+    // Finds whether there is a head that can only make one possible move and makes it.
+    // Returns whether a move was made.
+    makeForcedMove(): boolean {
+        const heads = Object.values(this.headLocations);
+        for (let i = 0; i < heads.length; i += 1) {
+            for (let j = 0; j < heads[i].length; j += 1) {
+                const row = heads[i][j][0];
+                const col = heads[i][j][1];
+                // Connects two heads if possible
+                if (this.connectPair(row, col)) {
+                    return true;
+                }
+                // TODO: Check if a dot is one space from a corner. If it is, it must go there.
+                let move = [-1, -1];
+                let foundMove = false;
+                const head = this.grid[row][col];
+                if (this.possibleMove(row, col, row - 1, col)) {
+                    move = [row - 1, col];
+                    foundMove = true;
+                }
+                if (this.possibleMove(row, col, row, col + 1)) {
+                    if (!foundMove) {
+                        move = [row, col + 1];
+                        foundMove = true;
+                    } else {
+                        continue;
+                    }
+                }
+                if (this.possibleMove(row, col, row + 1, col)) {
+                    if (!foundMove) {
+                        move = [row + 1, col];
+                        foundMove = true;
+                    } else {
+                        continue;
+                    }
+                }
+                if (this.possibleMove(row, col, row, col - 1)) {
+                    if (!foundMove) {
+                        move = [row, col - 1];
+                        foundMove = true;
+                    } else {
+                        continue;
+                    }
+                }
+                if (foundMove) {
+                    this.grid[move[0]][move[1]].color = head.color;
+                    this.grid[move[0]][move[1]].head = true;
+                    head.head = false;
+                    this.headLocations[head.color][j] = move;
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+
     /* Takes a position in the grid as input. The input position MUST be a circle.
     Function returns whether the circle has any adjacent connected line segments. Because line segments
     are only placed in the grid when we have a path we're trying, this function returns whether or not a circle
@@ -231,7 +330,7 @@ export default class FlowGame {
                     nextCol = col - 1;
                 }
             }
-            if (col !== this.grid[0].length && pastCol !== col + 1) {
+            if (col !== this.grid[0].length - 1 && pastCol !== col + 1) {
                 // Check square right
                 if (this.grid[row][col + 1].color === startingCircle.color) {
                     if (nextRow !== -1) {
@@ -275,10 +374,12 @@ export default class FlowGame {
         for (let i = 0; i < this.grid.length; i += 1) {
             let linetoprint = "";
             for (let j = 0; j < this.grid[0].length; j += 1) {
-                if (this.grid[i][j].circle) {
-                    linetoprint += `${this.grid[i][j].toString().substring(0, 3)}C `;
+                if (this.grid[i][j].color === "empty") {
+                    linetoprint += ".  ";
+                } else if (this.grid[i][j].circle) {
+                    linetoprint += `${this.grid[i][j].color[0].toUpperCase()}  `;
                 } else {
-                    linetoprint += `${this.grid[i][j].toString().substring(0, 3)}  `;
+                    linetoprint += `${this.grid[i][j].color[0]}  `;
                 }
             }
             console.log(linetoprint);
@@ -692,16 +793,23 @@ export default class FlowGame {
     }
 
     // Attempts to solve the grid by calling "solveCircle" on every circle it comes across.
+    /* TODO: Integrate with makeForcedMove. Something like:
+    while(!Object.keys(this.headLocations).empty) {
+        if (!this.makeForcedMove()) {
+            Do aj stuff one time
+        }
+    }
+    */
     loop() {
         let again = true;
         while (again) {
             again = false;
             for (let i = 0; i < this.grid.length; i += 1) {
                 for (let j = 0; j < this.grid[0].length; j += 1) {
-                    const line = new Tile(this.grid[i][j].color, false, false);
                     if (this.grid[i][j].circle && !this.checkCirclePath(i, j)) {
                         const walls = this.isEdge2(i, j);
                         if (walls.length !== 0) {
+                            const line = new Tile(this.grid[i][j].color, false, false);
                             if (this.solveCircle2(i, j, line, walls)) {
                                 again = true;
                                 if (this.pain) {
@@ -721,6 +829,9 @@ export default class FlowGame {
     }
 
     // Solves the grid and prints it out afterwards.
+    /* TODO: Integrate the new "head" member variable of Tile into AJ's code.
+    It should be updated when a move is made or when two heads are connected.
+    The headLocations member variable of our class should also be updated accordingly. */
     solve() {
         this.printGrid();
         console.log("Solving!");
