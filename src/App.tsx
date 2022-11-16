@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import React, { useState } from "react";
 import Box, { BoxProps } from '@mui/material/Box';
 import "./App.css";
@@ -27,6 +28,9 @@ function App() {
     const [gridHeight, setHeight] = useState(5);
     const [gridWidth, setWidth] = useState(5);
     const [color, setColor] = useState("Red");
+
+    const solveInput = Array(270).fill('.');
+    
     const colorList = ["yellow", "red", "blue", "cyan", "orange", "green", "lime", "magenta", "purple"];
     const colorMap = {
         "yellow": "#ffff00",
@@ -39,6 +43,18 @@ function App() {
         "magenta": "#ff00ff",
         "purple": "#A020F0",
     }
+    const colorCharMap = {
+        "yellow": 'Y',
+        "red": 'R',
+        "blue": 'B',
+        "cyan": 'C',
+        "orange": 'O',
+        "green": 'G',
+        "lime": 'L',
+        "magenta": 'M',
+        "purple": 'P',
+    }
+    
     
     const handleHeight = (event: any) => {
         setHeight(event.target.value);
@@ -57,39 +73,54 @@ function App() {
             <div className="Outer-Box">
                 <div className="Grid-select">
                         <select className="Grid-select-left" value={gridWidth} onChange={handleWidth}>
-                            <option value={5}>5</option>
-                            <option value={6}>6</option>
-                            <option value={7}>7</option>
-                            <option value={8}>8</option>
-                            <option value={9}>9</option>
-                            <option value={11}>11</option>
-                            <option value={12}>12</option>
-                            <option value={13}>13</option>
-                            <option value={14}>14</option>
-                            <option value={15}>15</option>
+                            {
+                                Array.from(Array(11)).map((_, index) => (
+                                    <option value={index + 5}>{index + 5}</option>
+                                ))
+                            }
+                           
                         </select>
                         <select className="Grid-selct-right" value={gridHeight} onChange={handleHeight}>
-                            <option value={5}>5</option>
-                            <option value={6}>6</option>
-                            <option value={7}>7</option>
-                            <option value={8}>8</option>
-                            <option value={9}>9</option>
+                            {
+                                Array.from(Array(14)).map((_, index) => (
+                                    <option value={index + 5}>{index + 5}</option>
+                                ))
+                            }
                         </select>
                 </div>
 
-                <Box
-                    sx={{
-                    display: 'grid',
-                    gridTemplateColumns: `repeat(${gridWidth}, 1fr)`,
-                    }}
-                >
-                    {
-                        Array.from(Array(gridHeight * gridWidth)).map((_, index) => (
-                            // eslint-disable-next-line no-template-curly-in-string
-                            <Item>{index}</Item>
-                        ))
-                    }
-                </Box>
+                <div className="Grid-container">
+                    <div>
+                        <Box
+                            sx={{
+                            display: 'grid',
+                            gridTemplateColumns: `repeat(${gridWidth}, 1fr)`,
+                            }}
+                        >
+                            {
+                                Array.from(Array(gridHeight * gridWidth)).map((_, index) => (
+                                    <Item>{index}</Item>
+                                ))
+                            }
+                        </Box>
+                    </div>
+                    
+                    <div className="Grid-right">
+                        <Box
+                            sx={{
+                            display: 'grid',
+                            gridTemplateColumns: `repeat(2, 1fr)`,
+                            }}
+                        >
+                            {
+                                colorList.map((element) => (
+                                    // <embed src="assets/flow-dot.svg" />
+
+                                ))
+                            }
+                        </Box>
+                    </div>
+                </div>
             </div>
         </div>
     );

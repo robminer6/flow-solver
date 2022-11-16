@@ -39,10 +39,19 @@
   color: white;
 }
 
-.Grid-container {
-  /* width: 50%; */
-  display: flex;
+.Grid-Outer {
+  width: 200px;
+  overflow: hidden;
+}
+.Grid-right {
+  float: right;
+  margin-right: 10px;
+}
 
+.Grid-container {
+  display: flex;
+  width: 100%;
+  justify-content: center;
 }
 
 .Grid-select {
@@ -53,14 +62,15 @@
 }
 
 .Grid-select-left {
-  width: 50%;
+  width: 35%;
+  font-size: 17px;
   float: left;
 }
 
 .Grid-selct-right {
-  width:50%;
+  width:35%;
   float: right;
-  /* overflow: hidden; */
+  font-size: 17px;
 }
 
 @keyframes App-logo-spin {
