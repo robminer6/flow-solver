@@ -4,8 +4,8 @@
 const debug = true;
 // let yes = false;
 
-class UncompletableError extends Error{
-    constructor (message: string){
+class UncompletableError extends Error {
+    constructor(message: string) {
         super(message);
         this.name = "UncompletableError";
     }
@@ -34,7 +34,7 @@ class Move {
 
     edge: boolean;
 
-    constructor(row: number, col: number, forced: boolean, edge: boolean){
+    constructor(row: number, col: number, forced: boolean, edge: boolean) {
         this.row = row;
         this.col = col;
         this.forced = forced;
@@ -123,22 +123,19 @@ export default class FlowGame {
                 this.grid.push([]);
                 for (let j = 0; j < arr[i].length; j += 1) {
                     const color = colorCharToString(arr[i][j]);
-                    if (color === "empty"){
+                    if (color === "empty") {
                         this.grid[i].push(new Tile(color, false, 0));
-                        continue;
-                    }
-                    if (this.headLocations[color]){
-                        this.headLocations[color].push([i,j]);
+                    } else if (this.headLocations[color]) {
+                        this.headLocations[color].push([i, j]);
                         this.grid[i].push(new Tile(color, true, 2));
-                        continue;
+                    } else {
+                        this.grid[i].push(new Tile(color, true, 1));
+                        this.headLocations[color] = [];
+                        this.headLocations[color].push([i, j]);
                     }
-                    this.grid[i].push(new Tile(color, true, 1));
-                    this.headLocations[color] = [];
-                    this.headLocations[color].push([i, j]);
                 }
             }
         } else if (debug) {
-
             const file =
                 ".C...B.RY\n" +
                 ".M.G..R..\n" +
@@ -164,12 +161,12 @@ export default class FlowGame {
                 this.grid.push([]);
                 for (let j = 0; j < board[i].length; j += 1) {
                     const color = colorCharToString(board[i][j]);
-                    if (color === "empty"){
+                    if (color === "empty") {
                         this.grid[i].push(new Tile(color, false, 0));
                         continue;
                     }
-                    if (this.headLocations[color]){
-                        this.headLocations[color].push([i,j]);
+                    if (this.headLocations[color]) {
+                        this.headLocations[color].push([i, j]);
                         this.grid[i].push(new Tile(color, true, 2));
                         continue;
                     }
@@ -199,11 +196,12 @@ export default class FlowGame {
             }
             return false;
         };
-        return investigate(row - 1, col) ||
+        return (
+            investigate(row - 1, col) ||
             investigate(row, col + 1) ||
             investigate(row + 1, col) ||
-            investigate(row, col - 1);
-
+            investigate(row, col - 1)
+        );
     }
 
     // Determines whether a given move is possible.
@@ -231,7 +229,7 @@ export default class FlowGame {
                 const col = heads[i][j][1];
 
                 // Skip color heads
-                if (color && this.grid[row][col].color === color){
+                if (color && this.grid[row][col].color === color) {
                     continue;
                 }
                 // Connects two heads if possible
@@ -239,6 +237,13 @@ export default class FlowGame {
                     return true;
                 }
                 // TODO: Check if a dot is one space from a corner. If it is, it must go there.
+                if (this.inBounds(row - 1, col)) {
+                    let corner = true;
+                    if (!(this.inBounds(row - 2, col) && this.grid[row - 2][col].color === "empty")) {
+                        corner = false;
+                    }
+                    if (corner && )
+                }
                 let move = [-1, -1];
                 let foundMove = false;
                 const head = this.grid[row][col];
@@ -346,7 +351,6 @@ export default class FlowGame {
             if (row !== 0 && pastRow !== row - 1) {
                 // Check square above
                 if (this.grid[row - 1][col].color === startingCircle.color) {
-                    // TODO: AJ did you forget to check for 2x2 here?
                     nextRow = row - 1;
                     nextCol = col;
                 }
@@ -430,7 +434,6 @@ export default class FlowGame {
         }
     }
 
-
     checkFreedom(row: number, col: number, target?: string) {
         if (!this.inBounds(row, col)) {
             return true; // This shouldn't be called much honestly, but its possible.
@@ -459,7 +462,6 @@ export default class FlowGame {
         }
         return true;
     }
-
 
     // Function only modifies path if it returns true. Function returns true if it found the endpoint
     edgeDash(path: [[number, number]], color: string, direction: Direction) {
@@ -525,10 +527,9 @@ export default class FlowGame {
             }
         }
 
-        if (!this.grid[curRow][curCol].head){
+        if (!this.grid[curRow][curCol].head) {
             throw Error("Somehow trying to move a space that isn't a head.");
         }
-
 
         const direction = given_dir;
         let newRow = curRow;
@@ -572,9 +573,13 @@ export default class FlowGame {
                 return false; // Found a circle on the space opposite of wallSide that had nowhere to go. This probably shouldn't get called. forcedmove solves it.
             }
 
-            if (this.grid[newRow][newCol].head){
+            if (this.grid[newRow][newCol].head) {
                 // We win, poggers dude.
-                if (this.grid[curRow][curCol].head && this.grid[newRow][newCol].head && this.grid[curRow][curCol].color === this.grid[newRow][newCol].color){
+                if (
+                    this.grid[curRow][curCol].head &&
+                    this.grid[newRow][newCol].head &&
+                    this.grid[curRow][curCol].color === this.grid[newRow][newCol].color
+                ) {
                     this.grid[curRow][curCol].head = 0;
                     this.grid[newRow][newCol].head = 0;
                     delete this.headLocations[color];
@@ -588,11 +593,10 @@ export default class FlowGame {
 
             // We can move there, lets do it
             this.grid[newRow][newCol] = new Tile(color, false, this.grid[curRow][curCol].head);
-            this.headLocations[color][this.grid[curRow][curCol].head-1] = [newRow, newCol];
+            this.headLocations[color][this.grid[curRow][curCol].head - 1] = [newRow, newCol];
             this.grid[curRow][curCol].head = 0;
 
             this.log.push(new Move(newRow, newCol, false, true));
-
 
             /*
             if (this.pain2) {
@@ -704,16 +708,15 @@ export default class FlowGame {
                                 this.grid[row][col].color,
                                 i
                             );
-                            if (potSuc){
+                            if (potSuc) {
                                 success = true;
                                 break;
                                 // Found a path. For now we're going to pretend like it MUST be correct.
                                 // TODO Robby help me think about how to fix this problem later with multiple potential paths it could have succeeded.
-                            }
-                            else{
+                            } else {
                                 this.grid = gridCopy; // Undo grid
                                 this.headLocations = headCopy; // Undo head
-                                while (this.log.length > logspot){
+                                while (this.log.length > logspot) {
                                     this.log.pop(); // Undo log
                                 }
                             }
@@ -721,7 +724,8 @@ export default class FlowGame {
                         // Any walls on left?
                         if (
                             (this.isWall(leftWalls[i][0][0], leftWalls[i][0][1]) ||
-                            this.isWall(leftWalls[i][1][0], leftWalls[i][1][1])) && !success
+                                this.isWall(leftWalls[i][1][0], leftWalls[i][1][1])) &&
+                            !success
                         ) {
                             // We go with wall on left
                             const logspot = this.log.length;
@@ -734,16 +738,15 @@ export default class FlowGame {
                                 this.grid[row][col].color,
                                 i
                             );
-                            if (potSuc){
+                            if (potSuc) {
                                 success = true;
                                 break;
                                 // Found a path. For now we're going to pretend like it MUST be correct.
                                 // TODO Robby help me think about how to fix this problem later with multiple potential paths it could have succeeded.
-                            }
-                            else{
+                            } else {
                                 this.grid = gridCopy; // Undo grid
                                 this.headLocations = headCopy; // Undo head
-                                while (this.log.length > logspot){
+                                while (this.log.length > logspot) {
                                     this.log.pop(); // Undo log
                                 }
                             }
@@ -753,7 +756,7 @@ export default class FlowGame {
                 }
             }
         }
-        if (success){
+        if (success) {
             // console.log(`Was able to solve circle at ${row}, ${col}`);
             return true;
         }
@@ -791,8 +794,7 @@ export default class FlowGame {
                         const walls = this.isEdge2(i, j);
                         if (walls.length !== 0) {
                             if (this.solveCircle2(i, j, walls)) {
-
-                                while (this.makeForcedMove()){
+                                while (this.makeForcedMove()) {
                                     // DanceFrog
                                 }
 
@@ -818,7 +820,7 @@ export default class FlowGame {
     It should be updated when a move is made or when two heads are connected.
     The headLocations member variable of our class should also be updated accordingly. */
     solve() {
-        while (this.makeForcedMove()){
+        while (this.makeForcedMove()) {
             // DanceFrog
         }
         this.printGrid();
