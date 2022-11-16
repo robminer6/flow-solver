@@ -28,12 +28,40 @@
   color: #61dafb;
 }
 
+.Outer-Box {
+  background-color: black;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* justify-content: center; */
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
 .Grid-container {
   /* width: 50%; */
   display: flex;
 
 }
 
+.Grid-select {
+  width: 200px;
+  height: 50px;
+  overflow: hidden;
+  margin-top: 2%;
+}
+
+.Grid-select-left {
+  width: 50%;
+  float: left;
+}
+
+.Grid-selct-right {
+  width:50%;
+  float: right;
+  /* overflow: hidden; */
+}
 
 @keyframes App-logo-spin {
   from {
