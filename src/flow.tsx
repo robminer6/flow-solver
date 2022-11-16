@@ -230,49 +230,83 @@ export default class FlowGame {
         return true; // placeholder
     }
 
+    // Determines if any of a tile's neighbors are corners.
+    // If true, returns their position. Otherwise, returns [-1, -1].
     cornerMove(row: number, col: number): number[] {
         if (this.isEmpty(row - 1, col)) {
-            let corner = !this.isEmpty(row - 2, col);
-            const right = this.isEmpty(row - 1, col + 1);
-            const left = this.isEmpty(row - 1, col - 1);
-            if ((left && right) || !(left || right)) {
-                corner = false;
-            }
-            if (corner) {
-                return [row - 1, col];
+            if (
+                !(
+                    (this.inBounds(row - 2, col) && this.grid[row - 2][col].head !== 0) ||
+                    (this.inBounds(row - 1, col + 1) && this.grid[row - 1][col + 1].head !== 0) ||
+                    (this.inBounds(row - 1, col - 1) && this.grid[row - 1][col - 1].head !== 0)
+                )
+            ) {
+                let corner = !this.isEmpty(row - 2, col);
+                const right = this.isEmpty(row - 1, col + 1);
+                const left = this.isEmpty(row - 1, col - 1);
+                if ((left && right) || !(left || right)) {
+                    corner = false;
+                }
+                if (corner) {
+                    return [row - 1, col];
+                }
             }
         }
         if (this.isEmpty(row, col + 1)) {
-            let corner = !this.isEmpty(row, col + 2);
-            const right = this.isEmpty(row + 1, col + 1);
-            const left = this.isEmpty(row - 1, col + 1);
-            if ((left && right) || !(left || right)) {
-                corner = false;
-            }
-            if (corner) {
-                return [row, col + 1];
+            if (
+                !(
+                    (this.inBounds(row, col + 2) && this.grid[row][col + 2].head !== 0) ||
+                    (this.inBounds(row + 1, col + 1) && this.grid[row + 1][col + 1].head !== 0) ||
+                    (this.inBounds(row - 1, col + 1) && this.grid[row - 1][col + 1].head !== 0)
+                )
+            ) {
+                let corner = !this.isEmpty(row, col + 2);
+                const right = this.isEmpty(row + 1, col + 1);
+                const left = this.isEmpty(row - 1, col + 1);
+                if ((left && right) || !(left || right)) {
+                    corner = false;
+                }
+                if (corner) {
+                    return [row, col + 1];
+                }
             }
         }
         if (this.isEmpty(row + 1, col)) {
-            let corner = !this.isEmpty(row + 2, col);
-            const right = this.isEmpty(row + 1, col - 1);
-            const left = this.isEmpty(row + 1, col + 1);
-            if ((left && right) || !(left || right)) {
-                corner = false;
-            }
-            if (corner) {
-                return [row + 1, col];
+            if (
+                !(
+                    (this.inBounds(row + 2, col) && this.grid[row + 2][col].head !== 0) ||
+                    (this.inBounds(row + 1, col - 1) && this.grid[row + 1][col - 1].head !== 0) ||
+                    (this.inBounds(row + 1, col + 1) && this.grid[row + 1][col + 1].head !== 0)
+                )
+            ) {
+                let corner = !this.isEmpty(row + 2, col);
+                const right = this.isEmpty(row + 1, col - 1);
+                const left = this.isEmpty(row + 1, col + 1);
+                if ((left && right) || !(left || right)) {
+                    corner = false;
+                }
+                if (corner) {
+                    return [row + 1, col];
+                }
             }
         }
         if (this.isEmpty(row, col - 1)) {
-            let corner = !this.isEmpty(row, col - 2);
-            const right = this.isEmpty(row - 1, col - 1);
-            const left = this.isEmpty(row + 1, col - 1);
-            if ((left && right) || !(left || right)) {
-                corner = false;
-            }
-            if (corner) {
-                return [row, col - 1];
+            if (
+                !(
+                    (this.inBounds(row, col - 2) && this.grid[row][col - 2].head !== 0) ||
+                    (this.inBounds(row - 1, col - 1) && this.grid[row - 1][col - 1].head !== 0) ||
+                    (this.inBounds(row + 1, col - 1) && this.grid[row + 1][col - 1].head !== 0)
+                )
+            ) {
+                let corner = !this.isEmpty(row, col - 2);
+                const right = this.isEmpty(row - 1, col - 1);
+                const left = this.isEmpty(row + 1, col - 1);
+                if ((left && right) || !(left || right)) {
+                    corner = false;
+                }
+                if (corner) {
+                    return [row, col - 1];
+                }
             }
         }
         return [-1, -1];
