@@ -4,6 +4,11 @@
 const debug = true;
 // let yes = false;
 
+function structuredCloner(array: any){
+    return JSON.parse(JSON.stringify(array));
+}
+
+
 class UncompletableError extends Error{
     constructor (message: string){
         super(message);
@@ -695,8 +700,8 @@ export default class FlowGame {
                         ) {
                             // We go with wall on right
                             const logspot = this.log.length;
-                            const gridCopy = structuredClone(this.grid);
-                            const headCopy = structuredClone(this.headLocations);
+                            const gridCopy = structuredCloner(this.grid);
+                            const headCopy = structuredCloner(this.headLocations);
                             const potSuc = this.followEdge(
                                 row,
                                 col,
@@ -725,8 +730,8 @@ export default class FlowGame {
                         ) {
                             // We go with wall on left
                             const logspot = this.log.length;
-                            const gridCopy = structuredClone(this.grid);
-                            const headCopy = structuredClone(this.headLocations);
+                            const gridCopy = structuredCloner(this.grid);
+                            const headCopy = structuredCloner(this.headLocations);
                             const potSuc = this.followEdge(
                                 row,
                                 col,
