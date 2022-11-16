@@ -4,13 +4,12 @@
 const debug = true;
 // let yes = false;
 
-function structuredCloner(array: any){
+function structuredCloner(array: any) {
     return JSON.parse(JSON.stringify(array));
 }
 
-
 class UncompletableError extends Error {
-    constructor (message: string) {
+    constructor(message: string) {
         super(message);
         this.name = "UncompletableError";
     }
@@ -90,6 +89,9 @@ function colorCharToString(char: string) {
     }
     if (char === "P" || char === "p") {
         return "purple";
+    }
+    if (char === "A" || char === "a") {
+        return "auburn";
     }
     throw new Error(`Error: unrecognized character ${char}`);
 }
@@ -209,6 +211,11 @@ export default class FlowGame {
         );
     }
 
+    // Returns whether a space on the grid is in-bounds and empty
+    isEmpty(row: number, col: number) {
+        return this.inBounds(row, col) && this.grid[row][col].color === "empty";
+    }
+
     // Determines whether a given move is possible.
     possibleMove(headRow: number, headCol: number, newRow: number, newCol: number): boolean {
         /* Reasons why a move might be impossible:
@@ -217,10 +224,58 @@ export default class FlowGame {
         3. It would cause another dot to have no possible moves.
         TODO: Implement all of these checks.
         */
-        if (!this.inBounds(newRow, newCol) || this.grid[newRow][newCol].color !== "empty") {
+        if (!this.isEmpty(newRow, newCol)) {
             return false;
         }
         return true; // placeholder
+    }
+
+    cornerMove(row: number, col: number): number[] {
+        if (this.isEmpty(row - 1, col)) {
+            let corner = !this.isEmpty(row - 2, col);
+            const right = this.isEmpty(row - 1, col + 1);
+            const left = this.isEmpty(row - 1, col - 1);
+            if ((left && right) || !(left || right)) {
+                corner = false;
+            }
+            if (corner) {
+                return [row - 1, col];
+            }
+        }
+        if (this.isEmpty(row, col + 1)) {
+            let corner = !this.isEmpty(row, col + 2);
+            const right = this.isEmpty(row + 1, col + 1);
+            const left = this.isEmpty(row - 1, col + 1);
+            if ((left && right) || !(left || right)) {
+                corner = false;
+            }
+            if (corner) {
+                return [row, col + 1];
+            }
+        }
+        if (this.isEmpty(row + 1, col)) {
+            let corner = !this.isEmpty(row + 2, col);
+            const right = this.isEmpty(row + 1, col - 1);
+            const left = this.isEmpty(row + 1, col + 1);
+            if ((left && right) || !(left || right)) {
+                corner = false;
+            }
+            if (corner) {
+                return [row + 1, col];
+            }
+        }
+        if (this.isEmpty(row, col - 1)) {
+            let corner = !this.isEmpty(row, col - 2);
+            const right = this.isEmpty(row - 1, col - 1);
+            const left = this.isEmpty(row + 1, col - 1);
+            if ((left && right) || !(left || right)) {
+                corner = false;
+            }
+            if (corner) {
+                return [row, col - 1];
+            }
+        }
+        return [-1, -1];
     }
 
     // Finds whether there is a head that can only make one possible move and makes it.
@@ -232,26 +287,30 @@ export default class FlowGame {
             for (let j = 0; j < heads[i].length; j += 1) {
                 const row = heads[i][j][0];
                 const col = heads[i][j][1];
+                const head = this.grid[row][col];
 
                 // Skip color heads
                 if (color && this.grid[row][col].color === color) {
                     continue;
                 }
+
                 // Connects two heads if possible
                 if (this.connectPair(row, col)) {
                     return true;
                 }
-                // TODO: Check if a dot is one space from a corner. If it is, it must go there.
-                if (this.inBounds(row - 1, col)) {
-                    let corner = true;
-                    if (!(this.inBounds(row - 2, col) && this.grid[row - 2][col].color === "empty")) {
-                        corner = false;
-                    }
-                    if (corner && )
+
+                // Check if a dot is one space from a corner. If it is, it must go there.
+                let move = this.cornerMove(row, col);
+                if (move[0] !== -1 && move[1] !== -1) {
+                    this.grid[move[0]][move[1]].color = head.color;
+                    this.grid[move[0]][move[1]].head = head.head;
+                    head.head = 0;
+                    this.headLocations[head.color][j] = move;
+                    return true;
                 }
-                let move = [-1, -1];
+
+                // Counts how many possible moves there are for this head
                 let foundMove = false;
-                const head = this.grid[row][col];
                 if (this.possibleMove(row, col, row - 1, col)) {
                     move = [row - 1, col];
                     foundMove = true;
@@ -280,6 +339,7 @@ export default class FlowGame {
                         continue;
                     }
                 }
+                // If we found exactly one possible move
                 if (foundMove) {
                     this.grid[move[0]][move[1]].color = head.color;
                     this.grid[move[0]][move[1]].head = head.head;
@@ -287,6 +347,7 @@ export default class FlowGame {
                     this.headLocations[head.color][j] = move;
                     return true;
                 }
+                // If it has no possible moves, puzzle is impossible.
                 throw new UncompletableError("ya done fuck up");
             }
         }
