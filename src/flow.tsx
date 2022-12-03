@@ -1,4 +1,4 @@
-/* eslint-disable max-classes-per-file */
+/* eslint-disable max-classes-per-file,prefer-destructuring */
 /* eslint-disable no-console */
 // const pain2maxval = 3;
 const debug = true;
@@ -144,14 +144,14 @@ export default class FlowGame {
             }
         } else if (debug) {
             const file =
-                ".C...B.RY\n" +
-                ".M.G..R..\n" +
-                "........C\n" +
-                "..YM...G.\n" +
-                "...B.....\n" +
+                ".......G.\n" +
+                ".BY......\n" +
+                "O........\n" +
+                "M....RY..\n" +
+                "..O.B...G\n" +
+                "....CR..C\n" +
+                "........M\n" +
                 ".........\n" +
-                ".........\n" +
-                ".O.....O.\n" +
                 ".........";
             /* const file =
                 "R.G.Y\n"+
@@ -214,6 +214,96 @@ export default class FlowGame {
     // Returns whether a space on the grid is in-bounds and empty
     isEmpty(row: number, col: number) {
         return this.inBounds(row, col) && this.grid[row][col].color === "empty";
+    }
+
+    specialCornerRule(ignoreColor?: string) : boolean {
+        // This function returns true if we were able to apply the special corner heuristic.
+        for(let i = 0; i < this.grid.length; i+=1){
+            for (let j = 0; j < this.grid[0].length; j+=1){
+                if (!this.isEmpty(i,j)){
+                    continue;
+                }
+                let left = 0;
+                let right = 0;
+                let up = 0;
+                let down = 0;
+                if (this.isWall(i-1, j)){
+                    down=1;
+                }
+                if (this.isWall(i+1, j)){
+                    up+=1;
+                }
+                if (this.isWall(i, j-1)){
+                    right+=1;
+                }
+                if (this.isWall(i, j+1)){
+                    left+=1;
+                }
+                if (up + down !== 1 || left + right !== 1){
+                    // Corner case doesn't apply.
+                    continue;
+                }
+                let inumber;
+                let jnumber;
+                if (up && right){
+                    inumber = -1;
+                    jnumber = 1;
+
+                }
+                else if (up && left){
+                    inumber = -1;
+                    jnumber = -1;
+                }
+                else if (down && right){
+                    inumber = 1;
+                    jnumber = 1;
+                }
+                else{
+                    // Down and left
+                    inumber = 1;
+                    jnumber = -1;
+                }
+
+                if (this.inBounds(i+inumber*2, j) && this.inBounds(i, j+jnumber*2) && (this.isEmpty(i+inumber*2, j) || this.isEmpty(i, j+jnumber*2))){
+                    // Corner case does apply, now we have to see if there's a head near us.
+                    let color;
+                    if (this.grid[i+inumber*2][j].head){
+                        // We found a case!
+                        this.printGrid();
+                        color = this.grid[i+inumber*2][j].color;
+                        if (ignoreColor && color === ignoreColor){
+                            continue;
+                        }
+                        this.grid[i][j+jnumber*2].color = color;
+                        this.grid[i][j+jnumber*2].head = this.grid[i+inumber*2][j].head;
+                        this.grid[i+inumber*2][j].head = 0;
+
+                        this.headLocations[color][this.grid[i][j+jnumber*2].head-1] = [i, j+jnumber*2];
+                    }
+                    else if (this.grid[i][j+jnumber*2].head){
+                        this.printGrid();
+                        color = this.grid[i][j+jnumber*2].color;
+                        if (ignoreColor && color === ignoreColor){
+                            continue;
+                        }
+                        this.grid[i+inumber*2][j].color = color;
+                        this.grid[i+inumber*2][j].head = this.grid[i][j+jnumber*2].head;
+                        this.grid[i][j+jnumber*2].head = 0;
+                        this.headLocations[color][this.grid[i+inumber*2][j].head-1] = [i+inumber*2, j];
+                    }
+                    else{
+                        continue;
+                    }
+                    this.grid[i+inumber][j].color = color;
+                    this.grid[i][j].color = color;
+                    this.grid[i][j+jnumber].color = color;
+                    // TODO add all of these "moves" to the log
+                    return true;
+                }
+
+            }
+        }
+        return false;
     }
 
     // Determines whether a given move is possible.
@@ -382,9 +472,16 @@ export default class FlowGame {
                     return true;
                 }
                 // If it has no possible moves, puzzle is impossible.
+                this.printGrid();
                 throw new UncompletableError("ya done fuck up");
             }
         }
+
+        if (this.specialCornerRule(color)){
+            return true;
+        }
+
+
         return false;
     }
 
@@ -628,6 +725,8 @@ export default class FlowGame {
         }
 
         if (!this.grid[curRow][curCol].head) {
+            console.log('\n\n\nUh oh below:\n')
+            this.printGrid();
             throw Error("Somehow trying to move a space that isn't a head.");
         }
 
@@ -733,9 +832,9 @@ export default class FlowGame {
     }
 
     solveCircle2(row: number, col: number, walls: number[][]) {
-        /* if (yes){
+        if (row === 7 && col === 5){
             this.printGrid();
-        } */
+        }
         let success = false;
         // DOWN RIGHT UP LEFT
         const rightWalls = [
@@ -793,9 +892,13 @@ export default class FlowGame {
                         // Can go
 
                         // Are any of the walls on our right?
+                        let wallOneRow = rightWalls[i][0][0];
+                        let wallOneCol = rightWalls[i][0][1];
+                        let wallTwoRow = rightWalls[i][1][0];
+                        let wallTwoCol = rightWalls[i][1][1];
                         if (
-                            this.isWall(rightWalls[i][0][0], rightWalls[i][0][1]) ||
-                            this.isWall(rightWalls[i][1][0], rightWalls[i][1][1])
+                            (this.isWall(wallOneRow, wallOneCol) && (!this.inBounds(wallOneRow, wallOneCol) || this.grid[wallOneRow][wallOneCol].color !== this.grid[row][col].color)) ||
+                            (this.isWall(wallTwoRow, wallTwoCol) && (!this.inBounds(wallTwoRow, wallTwoCol) || this.grid[wallTwoRow][wallTwoCol].color !== this.grid[row][col].color))
                         ) {
                             // We go with wall on right
                             const logspot = this.log.length;
@@ -822,9 +925,15 @@ export default class FlowGame {
                             }
                         }
                         // Any walls on left?
+                        wallOneRow = leftWalls[i][0][0];
+                        wallOneCol = leftWalls[i][0][1];
+                        wallTwoRow = leftWalls[i][1][0];
+                        wallTwoCol = leftWalls[i][1][1];
                         if (
-                            (this.isWall(leftWalls[i][0][0], leftWalls[i][0][1]) ||
-                                this.isWall(leftWalls[i][1][0], leftWalls[i][1][1])) &&
+                            (
+                                (this.isWall(wallOneRow, wallOneCol) && (!this.inBounds(wallOneRow, wallOneCol) || this.grid[wallOneRow][wallOneCol].color !== this.grid[row][col].color)) ||
+                                (this.isWall(wallTwoRow, wallTwoCol) && (!this.inBounds(wallTwoRow, wallTwoCol) || this.grid[wallTwoRow][wallTwoCol].color !== this.grid[row][col].color))
+                            ) &&
                             !success
                         ) {
                             // We go with wall on left

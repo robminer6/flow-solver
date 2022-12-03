@@ -10,6 +10,7 @@ const fileList = [
     "bonus_6x6_10.txt",
     "bonus_9x9_24.txt",
     "bonus_9x9_27.txt",
+    "classic_9x9_3.txt"
 ];
 
 fileList.forEach((file) => {
