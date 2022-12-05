@@ -93,6 +93,12 @@ function colorCharToString(char: string) {
     if (char === "A" || char === "a") {
         return "auburn";
     }
+    if (char === "S" || char === "s"){
+        return "silver";
+    }
+    if (char === "W" || char === "w"){
+        return "white";
+    }
     throw new Error(`Error: unrecognized character ${char}`);
 }
 
@@ -144,15 +150,16 @@ export default class FlowGame {
             }
         } else if (debug) {
             const file =
-                ".......G.\n" +
-                ".BY......\n" +
-                "O........\n" +
-                "M....RY..\n" +
-                "..O.B...G\n" +
-                "....CR..C\n" +
-                "........M\n" +
-                ".........\n" +
-                ".........";
+                "..........\n" +
+                ".YA.......\n" +
+                "..RC......\n" +
+                "......R...\n" +
+                "..........\n" +
+                "OY.S..A...\n" +
+                "...G..MW.O\n" +
+                ".P.BGS....\n" +
+                "..B...P.M.\n" +
+                "C...W.....";
             /* const file =
                 "R.G.Y\n"+
                     "..B.O\n"+
@@ -216,7 +223,7 @@ export default class FlowGame {
         return this.inBounds(row, col) && this.grid[row][col].color === "empty";
     }
 
-    specialCornerRule(ignoreColor?: string) : boolean {
+    specialCornerRule(ignoreColor?: string, head_num?: number) : boolean {
         // This function returns true if we were able to apply the special corner heuristic.
         for(let i = 0; i < this.grid.length; i+=1){
             for (let j = 0; j < this.grid[0].length; j+=1){
@@ -271,7 +278,7 @@ export default class FlowGame {
                         // We found a case!
                         this.printGrid();
                         color = this.grid[i+inumber*2][j].color;
-                        if (ignoreColor && color === ignoreColor){
+                        if (ignoreColor && color === ignoreColor && this.grid[i+inumber*2][j].head === head_num){
                             continue;
                         }
                         this.grid[i][j+jnumber*2].color = color;
@@ -283,7 +290,7 @@ export default class FlowGame {
                     else if (this.grid[i][j+jnumber*2].head){
                         this.printGrid();
                         color = this.grid[i][j+jnumber*2].color;
-                        if (ignoreColor && color === ignoreColor){
+                        if (ignoreColor && color === ignoreColor && this.grid[i][j+jnumber*2].head === head_num){
                             continue;
                         }
                         this.grid[i+inumber*2][j].color = color;
@@ -405,7 +412,7 @@ export default class FlowGame {
     // Finds whether there is a head that can only make one possible move and makes it.
     // Returns whether a move was made.
     // TODO add moves made to the log.
-    makeForcedMove(color?: string): boolean {
+    makeForcedMove(color?: string, head_num?: number): boolean {
         const heads = Object.values(this.headLocations);
         for (let i = 0; i < heads.length; i += 1) {
             for (let j = 0; j < heads[i].length; j += 1) {
@@ -414,7 +421,7 @@ export default class FlowGame {
                 const head = this.grid[row][col];
 
                 // Skip color heads
-                if (color && this.grid[row][col].color === color) {
+                if (color && this.grid[row][col].color === color && j+1 === head_num) {
                     continue;
                 }
 
@@ -714,7 +721,7 @@ export default class FlowGame {
     ): boolean {
         if (this.pain) {
             try {
-                while (this.makeForcedMove(color)) {
+                while (this.makeForcedMove(color, this.grid[curRow][curCol].head)) {
                     // Pass
                 }
             } catch (err: any) {
@@ -725,9 +732,7 @@ export default class FlowGame {
         }
 
         if (!this.grid[curRow][curCol].head) {
-            console.log('\n\n\nUh oh below:\n')
-            this.printGrid();
-            throw Error("Somehow trying to move a space that isn't a head.");
+            return true; // Other head connected with us, we win.
         }
 
         const direction = given_dir;
