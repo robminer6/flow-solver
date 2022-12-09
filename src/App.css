@@ -74,9 +74,15 @@
 }
 
 .solveButton {
-  background-color: lightgreen;
+  background-color: green;
+  color: white;
+  font-size: 22px;
   height: 50px;
   width: 100px;
+}
+
+.gridBox {
+  border: white 1px;
 }
 
 @keyframes App-logo-spin {

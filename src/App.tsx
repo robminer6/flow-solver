@@ -9,26 +9,6 @@ import FlowGame from "./flow";
 
 import "./App.css";
 
-function Item(props: BoxProps) {
-    const { sx } = props;
-    return (
-      <Box
-        sx={{
-          color: 'white',
-          border: '1px solid',
-          borderColor: 'white',
-          p: 1,
-          width: '40px',
-          height: '40px',
-          fontSize: '0.875rem',
-          fontWeight: '700',
-          ...sx,
-        }}
-        
-      />
-    );
-  }
-
 function FlowDotBet(props: { colorCode: string, position: number, update: Function, type: string, rotation: number }) {
 
     const onClick = () => {
@@ -41,29 +21,137 @@ function FlowDotBet(props: { colorCode: string, position: number, update: Functi
         case "pipe":
             return (
                 <svg width="40" height="40" transform={`rotate(${props.rotation})`}>
+                    <rect width="40" height="40" stroke="white"/>
                     <rect fill={props.colorCode} x="13" width="14" height="40"/>
                 </svg>
             )
         case "tip":
             return (
                 <svg width="40" height="40" transform={`rotate(${props.rotation})`}>
+                    <rect width="40" height="40" stroke="white"/>
                     <path fill={props.colorCode} d="M35,20c0,8.28-6.72,15-15,15s-15-6.72-15-15c0-5.75,3.24-10.75,8-13.27V0h14V6.73c4.76,2.52,8,7.52,8,13.27Z"/>
                 </svg>
             )
         case "corner":
             return (
                 <svg width="40" height="40" transform={`rotate(${props.rotation})`}>
-                    <path fill={props.colorCode} d="M27,0V18.17c0,4.88-3.95,8.83-8.83,8.83H0V14H13V0h14Z"/>
+                    <rect width="40" height="40" stroke="white"/>
+                    <path fill={props.colorCode} d="M27,0V16.94c0,5.56-4.5,10.06-10.06,10.06H0V13H13V0h14Z"/>
+
                 </svg>
             )
         default:
             return (
-                <svg width="40" height="40" onClick={onClick}>
-                    <circle fill={props.colorCode} stroke = "white" cx="20" cy="20" r="15" />
+                <svg width="40" height="40" onClick={onClick} className="gridBox">
+                    <rect width="40" height="40" stroke="white"/>
+                    <circle fill={props.colorCode}  cx="20" cy="20" r="15" />
+                    
                 </svg>
             )
     }
     
+}
+
+function translateTwoD(height: number, width: number, tempSolved: Array<string>) {
+    const dotType = new Array(270).fill({type: "Dot", angle: 0})
+    for (let i = 0; i < height; i += 1) {
+        for (let j = 0; j < width; j += 1) {
+            const tempDict = {
+                count: 0,
+                up: false,
+                down: false,
+                left: false,
+                right: false
+            }
+            // Up
+            if (tempSolved[i][j] !== "E") {
+                if (i !== 0) {
+                    if (tempSolved[i - 1][j] === tempSolved[i][j]) {
+                        tempDict.count += 1
+                        tempDict.up = true
+                    }
+                }
+                // Down
+                if (i !== height - 1) {
+                    if (tempSolved[i + 1][j] === tempSolved[i][j]) {
+                        tempDict.count += 1
+                        tempDict.down = true
+                    }
+                }
+                // Left
+                if (j !== 0) {
+                    if (tempSolved[i][j - 1] === tempSolved[i][j]) {
+                        tempDict.count += 1
+                        tempDict.left = true
+                    }
+                }
+                // Right
+                if (j !== width - 1) {
+                    if (tempSolved[i][j + 1] === tempSolved[i][j]) {
+                        tempDict.count += 1
+                        tempDict.right = true
+                    }
+                }
+                // Must be a tip
+                if (tempDict.count === 1) {
+                    if (tempDict.up) {
+                        dotType[(i * height) + j] = {type: "tip", angle: 0}
+                    }
+                    else if (tempDict.down) {
+                        dotType[(i * height) + j] = {type: "tip", angle: 180}
+                    }
+                    else if (tempDict.left) {
+                        dotType[(i * height) + j] = {type: "tip", angle: 270}
+                    }
+                    else if (tempDict.right) {
+                        dotType[(i * height) + j] = {type: "tip", angle: 90}
+                    }
+                    else {
+                        dotType[(i * height) + j] = {type: "dot", angle: 0}
+                    }
+                }
+                else {
+                    // Pipe or corner
+                    // eslint-disable-next-line no-lonely-if
+                    if (tempDict.down && tempDict.up ) {
+                        dotType[(i * height) + j] = {type: "pipe", angle: 0}
+                    }
+                    else if (tempDict.left && tempDict.right ) {
+                        dotType[(i * height) + j] = {type: "pipe", angle: 90}
+                    }
+                    else if (tempDict.right && tempDict.up ) {
+                        dotType[(i * height) + j] = {type: "corner", angle: 90}
+                    }
+                    else if (tempDict.left && tempDict.up ) {
+                        dotType[(i * height) + j] = {type: "corner", angle: 0}
+                    }
+                    else if (tempDict.left && tempDict.down ) {
+                        dotType[(i * height) + j] = {type: "corner", angle: 270}
+                    }
+                    else if (tempDict.right && tempDict.down ) {
+                        dotType[(i * height) + j] = {type: "corner", angle: 180}
+                    }
+                    else {
+                        dotType[(i * height) + j] = {type: "dot", angle: 0}
+                    }
+                }
+            }
+            
+        }
+    }
+    return dotType
+    // update state shit
+}
+
+function translateTwoDCol(width: number, height: number, tempSolved: Array<string>) {
+    const returnedArray = new Array(width * height)
+    for (let i = 0; i < height; i += 1) {
+        for (let j = 0; j < width; j += 1) {
+            returnedArray[(i * width) + j] = tempSolved[i][j]
+        }
+    }
+    return returnedArray
+
 }
 
 
@@ -80,7 +168,8 @@ function SolveButton(props: { solveArray: Array<string>, width: number, height: 
             tempArr[i] =  fuckArr
         }
 
-        const game = new FlowGame();
+        const game = new FlowGame(tempArr);
+        // const game = new FlowGame();
         game.solve()
         if (!game.checkComplete()) {
             // TODO CREATE ALERT
@@ -88,118 +177,26 @@ function SolveButton(props: { solveArray: Array<string>, width: number, height: 
         }
         // reformat returned array
         const griddy = game.grid
-        const fuckerArr2 = Array(props.width).fill(".")
-        const tempSolved = new Array(props.height).fill(fuckerArr2.fill("."))
-        for (let i = 0; i < tempSolved.length; i += 1) {
-            for (let j = 0; j < tempSolved[i].length; j += 1) {
-                tempSolved[i][j] = griddy[i][j].color[0].toUpperCase();
+        
+        const tempSolved = new Array(props.height)
+        for (let i = 0; i < props.height; i += 1) {
+            const fuckerArr2 = new Array(props.width)
+            for (let j = 0; j < props.width; j += 1) {
+                fuckerArr2[j] = griddy[i][j].color[0].toUpperCase();
             }
+            tempSolved[i] = fuckerArr2
         }
- 
-        const dotType = new Array(270).fill({type: "Dot", angle: 0})
-        console.log(props.height)
-        console.log(props.width)
+        const dotType= translateTwoD(props.height, props.width, tempSolved)
+        const returnedArray = translateTwoDCol(props.height, props.width,tempSolved)
 
-        for (let i = 0; i < props.height; i += 1) {
-            for (let j = 0; j < props.width; j += 1) {
-                const tempDict = {
-                    count: 0,
-                    up: false,
-                    down: false,
-                    left: false,
-                    right: false
-                }
-                // Up
-                if (i !== 0) {
-                    if (tempSolved[i - 1][j] === tempSolved[i][j]) {
-                        tempDict.count += 1
-                        tempDict.up = true
-                    }
-                }
-                // Down
-                if (i !== props.height - 1) {
-                    console.log(`WOOOOO${  i}`)
-                    console.log(`WOOOOO${  j}`)
-                    console.log(tempSolved[i][j])
-                    console.log(tempSolved[i + 1][j])
-                    if (tempSolved[i + 1][j] === tempSolved[i][j]) {
-                        tempDict.count += 1
-                        tempDict.down = true
-                    }
-                }
-                // Left
-                if (j !== 0) {
-                    if (tempSolved[i][j - 1] === tempSolved[i][j]) {
-                        tempDict.count += 1
-                        tempDict.left = true
-                    }
-                }
-                // Right
-                if (j !== props.width - 1) {
-                    if (tempSolved[i][j + 1] === tempSolved[i][j]) {
-                        tempDict.count += 1
-                        tempDict.right = true
-                    }
-                }
-                // Must be a tip
-                if (tempDict.count === 1) {
-                    if (tempDict.up) {
-                        dotType[(i * props.height) + j] = {type: "tip", angle: 0}
-                    }
-                    else if (tempDict.down) {
-                        dotType[(i * props.height) + j] = {type: "tip", angle: 180}
-                    }
-                    else if (tempDict.left) {
-                        dotType[(i * props.height) + j] = {type: "tip", angle: 270}
-                    }
-                    else if (tempDict.right) {
-                        dotType[(i * props.height) + j] = {type: "tip", angle: 90}
-                    }
-                    else {
-                        dotType[(i * props.height) + j] = {type: "dot", angle: 0}
-                    }
-                }
-                else {
-                    // Pipe or corner
-                    // eslint-disable-next-line no-lonely-if
-                    if (tempDict.down && tempDict.up ) {
-                        dotType[(i * props.height) + j] = {type: "pipe", angle: 0}
-                    }
-                    else if (tempDict.left && tempDict.right ) {
-                        dotType[(i * props.height) + j] = {type: "pipe", angle: 90}
-                    }
-                    else if (tempDict.right && tempDict.up ) {
-                        dotType[(i * props.height) + j] = {type: "corner", angle: 90}
-                    }
-                    else if (tempDict.left && tempDict.up ) {
-                        dotType[(i * props.height) + j] = {type: "corner", angle: 0}
-                    }
-                    else if (tempDict.left && tempDict.down ) {
-                        dotType[(i * props.height) + j] = {type: "corner", angle: 270}
-                    }
-                    else if (tempDict.right && tempDict.down ) {
-                        dotType[(i * props.height) + j] = {type: "corner", angle: 180}
-                    }
-                    else {
-                        dotType[(i * props.height) + j] = {type: "dot", angle: 0}
-                    }
-                }
-            }
-        }
-        // New Colors.
-        const returnedArray = new Array(props.width * props.height)
-        for (let i = 0; i < props.height; i += 1) {
-            for (let j = 0; j < props.width; j += 1) {
-                returnedArray[(i * props.width) + j] = tempSolved[i][j]
-            }
-        }
-        // update state shit
+        
         props.update(returnedArray, dotType)
     }
     return (
-        <Button type="button" onClick={onClick}>Solve!</Button>
+        <button type="button" onClick={onClick} className="solveButton">Solve!</button>
     )
 }
+
 
 function App() {
     const initialColState =  Array(270).fill("#000000");
@@ -214,7 +211,7 @@ function App() {
     const [solveChar, setSolveChar] =  useState(initialSolveChar);
     
    
-    const colorList = ["yellow", "red", "blue", "cyan", "orange", "green", "lime", "magenta", "purple"];
+    const colorList = ["yellow", "red", "blue", "cyan", "orange", "green", "lime", "magenta", "purple", "auburn", "silver", "white", "black"];
     const colorMap = new Map<string, string>()    
     colorMap.set("yellow", "#ffff00")
     colorMap.set("red", "#ff0000")
@@ -225,6 +222,11 @@ function App() {
     colorMap.set("lime", "#00ff00")
     colorMap.set("magenta", "#ff00ff")
     colorMap.set("purple", "#A020F0")
+    colorMap.set( "auburn", '#800000')
+    colorMap.set( "silver", '#808080')
+    colorMap.set( "white", '#FFFFFF')
+    colorMap.set( "black", '#000000')
+
     const colorCharMap = new Map<string, string>()
     colorCharMap.set("yellow", 'Y')
     colorCharMap.set ("red", 'R')
@@ -235,6 +237,10 @@ function App() {
     colorCharMap.set ( "lime", 'L')
     colorCharMap.set ( "magenta", 'M')
     colorCharMap.set ( "purple", 'P')
+    colorCharMap.set ( "auburn", 'A')
+    colorCharMap.set ( "silver", 'S')
+    colorCharMap.set ( "white", 'W')
+    colorCharMap.set ( "black", '.')
 
     function charToCode(input: string) {
         switch(input) {
@@ -256,6 +262,12 @@ function App() {
                 return "#ff00ff"
             case 'P':
                 return "#A020F0"
+            case 'A':
+                return "#800000"
+            case 'S':
+                return "#808080"
+            case 'W':
+                return "#FFFFFF"
             default:
                 return "#000000"
         }
@@ -353,7 +365,7 @@ function App() {
                         >
                             {
                                 colorList.map((data) => (
-                                        <FlowDot fill={colorMap.get(data)} onClick={() => setColor(data)}/>
+                                        <FlowDot fill={colorMap.get(data)} stroke="white" onClick={() => setColor(data)}/>
                                 ))
                             }
                         </Box>
