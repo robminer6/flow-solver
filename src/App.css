@@ -28,6 +28,57 @@
   color: #61dafb;
 }
 
+.Outer-Box {
+  background-color: black;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* justify-content: center; */
+  font-size: calc(10px + 2vmin);
+  color: white;
+}
+
+.Grid-Outer {
+  width: 200px;
+  overflow: hidden;
+}
+.Grid-right {
+  float: right;
+  margin-right: 10px;
+}
+
+.Grid-container {
+  display: flex;
+  width: 100%;
+  justify-content: center;
+}
+
+.Grid-select {
+  width: 200px;
+  height: 50px;
+  overflow: hidden;
+  margin-top: 2%;
+}
+
+.Grid-select-left {
+  width: 35%;
+  font-size: 17px;
+  float: left;
+}
+
+.Grid-selct-right {
+  width:35%;
+  float: right;
+  font-size: 17px;
+}
+
+.solveButton {
+  background-color: lightgreen;
+  height: 50px;
+  width: 100px;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
