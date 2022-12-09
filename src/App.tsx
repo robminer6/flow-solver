@@ -158,7 +158,6 @@ function SolveButton(props: {
     const onClick = () => {
         // format new array
         const tempArr = new Array(props.height);
-
         for (let i = 0; i < props.height; i += 1) {
             const fuckArr = new Array(props.width);
             for (let j = 0; j < props.width; j += 1) {
@@ -197,47 +196,48 @@ function SolveButton(props: {
     );
 }
 
+function HintButton(props: {  update: Function}) {
+    const onClick = () => {
+        props.update()
+    }
+    return (
+        <button type="button" onClick={onClick} className="hintButton">Hint</button>
+    )
+}
+
+
 function App() {
-    const initialColState = Array(270).fill("#000000");
-    const initialTypeState = Array(270).fill({ type: "dot", angle: 0 });
+    const initialColState =  Array(270).fill("none");
+    const initialTypeState = Array(270).fill({type: "dot", angle: 0});
     const initialSolveChar = Array(270).fill(".");
 
     const [gridHeight, setHeight] = useState(5);
     const [gridWidth, setWidth] = useState(5);
     const [color, setColor] = useState("red");
     const [solveInput, setSolveInput] = useState(initialColState);
-    const [typeArr, setTypeArr] = useState(initialTypeState);
-    const [solveChar, setSolveChar] = useState(initialSolveChar);
-
-    const colorList = [
-        "yellow",
-        "red",
-        "blue",
-        "cyan",
-        "orange",
-        "green",
-        "lime",
-        "magenta",
-        "purple",
-        "auburn",
-        "silver",
-        "white",
-        "black",
-    ];
-    const colorMap = new Map<string, string>();
-    colorMap.set("yellow", "#ffff00");
-    colorMap.set("red", "#ff0000");
-    colorMap.set("blue", "#0000ff");
-    colorMap.set("cyan", "#00ffff");
-    colorMap.set("orange", "#ffa500");
-    colorMap.set("green", "#008000");
-    colorMap.set("lime", "#00ff00");
-    colorMap.set("magenta", "#ff00ff");
-    colorMap.set("purple", "#A020F0");
-    colorMap.set("auburn", "#800000");
-    colorMap.set("silver", "#808080");
-    colorMap.set("white", "#FFFFFF");
-    colorMap.set("black", "#000000");
+    const [typeArr, setTypeArr] =  useState(initialTypeState);
+    const [solveChar, setSolveChar] =  useState(initialSolveChar);
+    const [hinting, setHinting] = useState(false);
+    const [unsolve, setUnsolve] = useState(false);
+    const [trueColors, setTrueColors] = useState(initialSolveChar)
+    const [inColors, setInColors] = useState(Array<string>)
+    
+   
+    const colorList = ["yellow", "red", "blue", "cyan", "orange", "green", "lime", "magenta", "purple", "auburn", "silver", "white", "black"];
+    const colorMap = new Map<string, string>()    
+    colorMap.set("yellow", "#ffff00")
+    colorMap.set("red", "#ff0000")
+    colorMap.set("blue", "#0000ff")
+    colorMap.set("cyan", "#00ffff")
+    colorMap.set("orange", "#ffa500")
+    colorMap.set("green", "#008000")
+    colorMap.set("lime", "#00ff00")
+    colorMap.set("magenta", "#ff00ff")
+    colorMap.set("purple", "#A020F0")
+    colorMap.set( "auburn", '#800000')
+    colorMap.set( "silver", '#808080')
+    colorMap.set( "white", '#FFFFFF')
+    colorMap.set( "black", 'none')
 
     const colorCharMap = new Map<string, string>();
     colorCharMap.set("yellow", "Y");
@@ -281,15 +281,30 @@ function App() {
             case "W":
                 return "#FFFFFF";
             default:
-                return "#000000";
+                return "none"
         }
     }
+
+    // const [gridHeight, setHeight] = useState(5);
+    // const [gridWidth, setWidth] = useState(5);
+    // const [color, setColor] = useState("red");
+    // const [solveInput, setSolveInput] = useState(initialColState);
+    // const [typeArr, setTypeArr] =  useState(initialTypeState);
+    // const [solveChar, setSolveChar] =  useState(initialSolveChar);
+    // const [hinting, setHinting] = useState(false);
+    // const [unsolve, setUnsolve] = useState(false);
+    // const [trueColors, setTrueColors] = useState(initialSolveChar)
+    // const [inColors, setInColors] = useState(Array<string>)
 
     const handleHeight = (event: any) => {
         setHeight(event.target.value);
         setSolveInput(initialColState);
         setTypeArr(initialTypeState);
         setSolveChar(initialSolveChar);
+        setHinting(false);
+        setUnsolve(false);
+        setTrueColors(initialColState);
+        setInColors(new Array<string>);
     };
 
     const handleWidth = (event: any) => {
@@ -297,6 +312,10 @@ function App() {
         setSolveInput(initialColState);
         setTypeArr(initialTypeState);
         setSolveChar(initialSolveChar);
+        setHinting(false);
+        setUnsolve(false);
+        setTrueColors(initialColState);
+        setInColors(new Array<string>);
     };
 
     // Click and change color.
@@ -319,12 +338,77 @@ function App() {
         setTypeArr(types);
     };
 
+    const updateHint = () => {
+        if (!hinting) {
+            const tempArr = new Array(gridHeight);
+            for (let i = 0; i < gridHeight; i += 1) {
+                const fuckArr = new Array(gridWidth)
+                for (let j = 0; j < gridWidth; j += 1) {
+                    fuckArr[j] = solveChar[(i * gridHeight) + j]
+                }
+                tempArr[i] =  fuckArr
+            }
+            console.log(tempArr)
+            const gamerGrill = new FlowGame(tempArr);
+            gamerGrill.solve()
+            if (!gamerGrill.checkComplete()) {
+                setUnsolve(true);
+            }
+            else {
+                setHinting(true);
+                const griddyII = gamerGrill.grid
+                const tempSolved = new Array(gridHeight)
+                for (let i = 0; i < gridHeight; i += 1) {
+                    const fuckerArr2 = new Array(gridWidth)
+                    for (let j = 0; j < gridWidth; j += 1) {
+                        fuckerArr2[j] = griddyII[i][j].color[0].toUpperCase();
+                    }
+                    tempSolved[i] = fuckerArr2
+                }
+                const solvedArray = translateTwoD(gridWidth, gridHeight, tempSolved)
+                // const tempCols = translateTwoDCol(gridWidth, gridHeight, tempSolved)
+                setTypeArr(solvedArray)
+                setSolveInput(Array(gridHeight * gridWidth).fill("none"))
+                const returnedArray = new Array(gridWidth * gridHeight)
+                for (let i = 0; i < gridHeight; i += 1) {
+                    for (let j = 0; j < gridWidth; j += 1) {
+                        returnedArray[(i * gridWidth) + j] = tempSolved[i][j]
+                    }
+                }
+                setTrueColors(returnedArray)
+            }
+        }
+        if (!unsolve) {
+            // color set
+            let added = false
+            const showCols = inColors.slice()
+            const renderCols = Array(gridHeight * gridWidth).fill("none")
+            for (let i = 0; i < gridHeight * gridWidth; i += 1) {
+                if (!showCols.includes(trueColors[i]) && !added) {
+                    added = true
+                    showCols.push(trueColors[i])
+                }
+                if (showCols.includes(trueColors[i])) {
+                    renderCols[i] = charToCode(trueColors[i])
+                }
+                else {
+                    renderCols[i] = "none"
+                }
+            }
+            setSolveInput(renderCols)
+            setInColors(showCols)
+        }
+        else {
+            // TODO SHIT FUCKED
+        }
+    }
+
     return (
         <div className="App">
             <div className="Outer-Box">
                 <div className="Instructions">
                     <h2 className="Title">Flow Solver</h2>
-                    <h4 className="Authors">By Rob Miner, AJ Pynnonen, and Matt Debacker</h4>
+                    <h4 className="Authors">By Rob Miner, Alex Pynnonen, and Matt DeBacker</h4>
                     <p className="Description">
                         This is a solver for the popular mobile game, &quot;Flow Free,&quot;
                         developed by Big Duck Games. To use, select the dimensions of your puzzle
@@ -332,7 +416,7 @@ function App() {
                         dots by selecting a color on the right and placing it on the grid (black is
                         an eraser). Once you&apos;ve placed all your dots, click the
                         &quot;Hint&quot; button to show one of the correct paths or the
-                        &quot;Solve&quot; button to show them all.
+                        &quot;Solve&quot; button to show them all. You will need to click the hint button a second time to show the first hint.
                     </p>
                 </div>
                 <div className="Grid-select">
@@ -394,6 +478,7 @@ function App() {
                         </Box>
                     </div>
                 </div>
+                <HintButton update={updateHint} />
                 <SolveButton
                     solveArray={solveChar}
                     width={gridWidth}
