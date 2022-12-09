@@ -126,6 +126,10 @@ export default class FlowGame {
 
     pain2val: number = 1;
 
+    solved: boolean = false;
+
+    hints = new Set();
+
     pain2attempts: [number, number, Tile] = [-1, -1, new Tile("empty", false, 0)];
 
     // Constructs our grid, usually by reading from a string array.
@@ -1063,6 +1067,42 @@ export default class FlowGame {
             }
         }
         */
-        this.checkComplete();
+        if (this.checkComplete()){
+            this.solved = true;
+        }
+    }
+
+    hint() {
+        if (!this.solved){
+            this.solve();
+        }
+        if (!this.solved){
+            throw new UncompletableError("fuck");
+        }
+        let done = false;
+        for (let i = 0; i < this.grid.length; i+=1){
+            for (let j = 0; j < this.grid[0].length; j+=1){
+                if (this.grid[i][j].circle && !this.hints.has(this.grid[i][j].color) ){
+                    this.hints.add(this.grid[i][j].color);
+                    done = true;
+                    break;
+                }
+            }
+            if (done){
+                break;
+            }
+        }
+        const tmpGrid = structuredCloner(this.grid);
+        for (let i = 0; i < this.grid.length; i+=1){
+            for (let j = 0; j < this.grid[0].length; j+=1){
+                if (!this.hints.has(tmpGrid[i][j].color)){
+                    tmpGrid[i][j].color = "empty";
+                    tmpGrid[i][j].head = 0;
+                    tmpGrid[i][j].circle = false;
+                }
+            }
+        }
+        return tmpGrid;
+
     }
 }
