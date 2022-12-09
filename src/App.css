@@ -73,6 +73,12 @@
   font-size: 17px;
 }
 
+.solveButton {
+  background-color: lightgreen;
+  height: 50px;
+  width: 100px;
+}
+
 @keyframes App-logo-spin {
   from {
     transform: rotate(0deg);
