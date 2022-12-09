@@ -70,30 +70,36 @@ function FlowDotBet(props: { colorCode: string, position: number, update: Functi
 function SolveButton(props: { solveArray: Array<string>, width: number, height: number, update: Function}) {
     const onClick = () => {
         // format new array
-        const tempArr = new Array(props.width).fill(new Array(props.height).fill("."));
+        const tempArr = new Array(props.height);
+
         for (let i = 0; i < props.height; i += 1) {
+            const fuckArr = new Array(props.width)
             for (let j = 0; j < props.width; j += 1) {
-                if (props.solveArray[(i * props.width) + j] !== ".") {
-                    tempArr[i][j] = props.solveArray[(i * props.width) + j]
-                }
+                fuckArr[j] = props.solveArray[(i * props.height) + j]
+            }
+            tempArr[i] =  fuckArr
+        }
+
+        const game = new FlowGame();
+        game.solve()
+        if (!game.checkComplete()) {
+            // TODO CREATE ALERT
+            return
+        }
+        // reformat returned array
+        const griddy = game.grid
+        const fuckerArr2 = Array(props.width).fill(".")
+        const tempSolved = new Array(props.height).fill(fuckerArr2.fill("."))
+        for (let i = 0; i < tempSolved.length; i += 1) {
+            for (let j = 0; j < tempSolved[i].length; j += 1) {
+                tempSolved[i][j] = griddy[i][j].color[0].toUpperCase();
             }
         }
-        // submit
-        const game = new FlowGame(tempArr);
-        // TODO -- need to get return array
-        // IF NOT SOLVABLE CREATE ALERT BREAK
-
-        // TODO -- reverse formatting
-        // reformat returned array
-        const tempSolved = [
-            ["R", "R", "R", "R", "R"],
-            ["R", "Y", "B", "B", "R"],
-            ["R", "Y", "B", "R", "R"],
-            ["R", "Y", "R", "R", "G"],
-            ["R", "Y", "G", "G", "G"]
-        ]
-        // Dir / SVG Type
+ 
         const dotType = new Array(270).fill({type: "Dot", angle: 0})
+        console.log(props.height)
+        console.log(props.width)
+
         for (let i = 0; i < props.height; i += 1) {
             for (let j = 0; j < props.width; j += 1) {
                 const tempDict = {
@@ -112,6 +118,10 @@ function SolveButton(props: { solveArray: Array<string>, width: number, height: 
                 }
                 // Down
                 if (i !== props.height - 1) {
+                    console.log(`WOOOOO${  i}`)
+                    console.log(`WOOOOO${  j}`)
+                    console.log(tempSolved[i][j])
+                    console.log(tempSolved[i + 1][j])
                     if (tempSolved[i + 1][j] === tempSolved[i][j]) {
                         tempDict.count += 1
                         tempDict.down = true
@@ -194,13 +204,14 @@ function SolveButton(props: { solveArray: Array<string>, width: number, height: 
 function App() {
     const initialColState =  Array(270).fill("#000000");
     const initialTypeState = Array(270).fill({type: "dot", angle: 0});
-    let solveChar = Array(270).fill(".");
+    const initialSolveChar = Array(270).fill(".");
 
     const [gridHeight, setHeight] = useState(5);
     const [gridWidth, setWidth] = useState(5);
     const [color, setColor] = useState("red");
     const [solveInput, setSolveInput] = useState(initialColState);
-    const [typeArr, setTypeArr] =  useState(initialTypeState)
+    const [typeArr, setTypeArr] =  useState(initialTypeState);
+    const [solveChar, setSolveChar] =  useState(initialSolveChar);
     
    
     const colorList = ["yellow", "red", "blue", "cyan", "orange", "green", "lime", "magenta", "purple"];
@@ -256,7 +267,7 @@ function App() {
         setHeight(event.target.value);
         setSolveInput(initialColState)
         setTypeArr(initialTypeState)
-        solveChar = Array(270).fill(".");
+        setSolveChar(initialSolveChar)
 
     }
 
@@ -264,14 +275,17 @@ function App() {
         setWidth(event.target.value);
         setSolveInput(initialColState)
         setTypeArr(initialTypeState)
-        solveChar = Array(270).fill(".");
+        setSolveChar(initialSolveChar)
     }
 
     // Click and change color.
     const update = (position: number) => {
         const newArray = solveInput.slice();
         newArray[position] = colorMap.get(color);
-        solveChar[position] = colorCharMap.get(color);
+        const newSolve = solveChar.slice();
+        newSolve[position] = colorCharMap.get(color);
+        setSolveChar(newSolve)
+        // console.log(solveChar)
         setSolveInput(newArray)
     }
     // Set Grid After solve
