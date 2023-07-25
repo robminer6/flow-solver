@@ -1,11 +1,14 @@
 /* eslint-disable max-classes-per-file,prefer-destructuring */
 /* eslint-disable no-console */
+/* eslint-disable */
 const debug = true;
 
+// Deep copies an array
 function structuredCloner(array: any) {
     return JSON.parse(JSON.stringify(array));
 }
 
+// Error thrown when board is uncompletable
 class UncompletableError extends Error {
     constructor(message: string) {
         super(message);
@@ -32,12 +35,12 @@ class Move {
 
     col: number;
 
-    headnum: number
+    headnum: number;
 
     constructor(row: number, col: number, headnum: number) {
         this.row = row;
         this.col = col;
-        this.headnum = headnum
+        this.headnum = headnum;
     }
 }
 
@@ -76,15 +79,14 @@ function colorCharToString(char: string) {
     if (char === "A" || char === "a") {
         return "auburn";
     }
-    if (char === "S" || char === "s"){
+    if (char === "S" || char === "s") {
         return "silver";
     }
-    if (char === "W" || char === "w"){
+    if (char === "W" || char === "w") {
         return "white";
     }
     throw new Error(`Error: unrecognized character ${char}`);
 }
-
 
 export default class FlowGame {
     grid: Tile[][] = [];
@@ -154,9 +156,7 @@ export default class FlowGame {
 
     // Investigates a head to see if it touches its partner. Connects them if so.
     // Returns whether a pair was connected.
-    connectPair(row: number, col: number) {
-
-    }
+    connectPair(row: number, col: number) {}
 
     // Returns whether a space on the grid is in-bounds and empty
     isEmpty(row: number, col: number) {
@@ -181,10 +181,9 @@ export default class FlowGame {
         return true;
     }
 
-
     // Makes all possible forced moves
     // eslint-disable-next-line consistent-return
-    makeForcedMoves(){
+    makeForcedMoves() {
         const heads = Object.values(this.headLocations);
         for (let i = 0; i < heads.length; i += 1) {
             for (let j = 0; j < heads[i].length; j += 1) {
@@ -196,7 +195,7 @@ export default class FlowGame {
                 // TODO implement
 
                 // Check if a head is one or two spaces from a corner. If it is, it must go there.
-                this.specialCornerRule()
+                this.specialCornerRule();
 
                 // Counts how many possible moves there are for this head
                 let foundMove = false;
@@ -235,7 +234,7 @@ export default class FlowGame {
                     this.headLocations[head.color][j] = move;
                 }
                 // If it has no possible moves, puzzle is impossible.
-                throw new UncompletableError(`no possible moves for ${head.color} ${(j+1)}`);
+                throw new UncompletableError(`no possible moves for ${head.color} ${j + 1}`);
             }
         }
     }
@@ -356,21 +355,19 @@ export default class FlowGame {
     solve() {
         // TODO initialize log
         console.log("Solving!");
-        while (Object.values(this.headLocations).length > 0){
+        while (Object.values(this.headLocations).length > 0) {
             // While heads still exist
             try {
-                this.makeForcedMoves()
-            }
-            catch {
+                this.makeForcedMoves();
+            } catch {
                 // Puzzle currently unsolvable, back up a log state
                 // TODO actually back up a log state
-            }
-            finally {
+            } finally {
                 // We made all the forced moves we could, now go make a guess
                 // TODO make a guess
             }
         }
-        console.log("Solved!")
+        console.log("Solved!");
         this.printGrid();
     }
 }
