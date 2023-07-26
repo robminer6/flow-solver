@@ -1,0 +1,16 @@
+{
+  "files": {
+    "main.css": "/flow-solver/static/css/main.073c9b0a.css",
+    "main.js": "/flow-solver/static/js/main.f0428fb7.js",
+    "static/js/787.1383bcbc.chunk.js": "/flow-solver/static/js/787.1383bcbc.chunk.js",
+    "static/media/logo.svg": "/flow-solver/static/media/logo.6ce24c58023cc2f8fd88fe9d219db6c6.svg",
+    "index.html": "/flow-solver/index.html",
+    "main.073c9b0a.css.map": "/flow-solver/static/css/main.073c9b0a.css.map",
+    "main.f0428fb7.js.map": "/flow-solver/static/js/main.f0428fb7.js.map",
+    "787.1383bcbc.chunk.js.map": "/flow-solver/static/js/787.1383bcbc.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.073c9b0a.css",
+    "static/js/main.f0428fb7.js"
+  ]
+}
